@@ -1,25 +1,24 @@
 "use client"
 
-import { useState, useRef } from "react";
+import { useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { Card, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { useAuth } from "@/components/auth-context";
 import { 
   ShieldCheck, 
   Briefcase, 
   Wrench, 
   Wallet, 
-  Lock, 
   Building2, 
   ArrowRight, 
-  Sparkles, 
-  Loader2, 
   CheckCircle2, 
   BarChart3, 
   Users2, 
   Cpu,
-  ChevronDown
+  ChevronDown,
+  Activity,
+  Zap,
+  Lock
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
@@ -27,29 +26,29 @@ import { PlaceHolderImages } from "@/lib/placeholder-images";
 
 export default function Home() {
   const { login } = useAuth();
-  const loginSectionRef = useRef<HTMLDivElement>(null);
+  const portalSectionRef = useRef<HTMLDivElement>(null);
 
-  const scrollToLogin = () => {
-    loginSectionRef.current?.scrollIntoView({ behavior: 'smooth' });
+  const scrollToPortal = () => {
+    portalSectionRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   const personas = [
-    { role: 'Admin', icon: ShieldCheck, desc: 'Complete organizational oversight, user provisioning, and high-level task delegation.' },
-    { role: 'Marketing', icon: Briefcase, desc: 'Seamlessly capture client requirements and use AI to transform them into technical blueprints.' },
-    { role: 'Technician', icon: Wrench, desc: 'Execution-focused workspace with integrated time tracking and step-by-step implementation guides.' },
-    { role: 'Finance', icon: Wallet, desc: 'Deep-dive into billable hours, departmental efficiency, and resource allocation analytics.' },
+    { role: 'Admin', icon: ShieldCheck, desc: 'Complete organizational oversight and user provisioning.', color: 'from-blue-500 to-indigo-600' },
+    { role: 'Marketing', icon: Briefcase, desc: 'Capture requirements and refine tasks with Gemini AI.', color: 'from-cyan-400 to-blue-500' },
+    { role: 'Technician', icon: Wrench, desc: 'Integrated time tracking and technical execution guides.', color: 'from-indigo-500 to-purple-600' },
+    { role: 'Finance', icon: Wallet, desc: 'Deep-dive billable analytics and resource allocation.', color: 'from-emerald-400 to-teal-500' },
   ];
 
   const features = [
     {
       title: "AI Task Architect",
-      desc: "Transform vague client requests into detailed technical specifications using advanced Gemini-powered logic.",
+      desc: "Gemini-powered logic transforms brief requests into precision technical blueprints.",
       icon: Cpu,
       imageId: 'feature-ai'
     },
     {
       title: "Real-time Analytics",
-      desc: "Monitor departmental KPIs and staff performance with dynamic charts and efficiency scoring.",
+      desc: "Live KPI monitoring and efficiency scores across all departments.",
       icon: BarChart3,
       imageId: 'feature-stats'
     }
@@ -64,70 +63,83 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-background font-body">
+    <div className="min-h-screen bg-[#F8FAFC] font-body text-slate-900 selection:bg-primary selection:text-white">
+      {/* Dynamic Background */}
+      <div className="fixed inset-0 mesh-gradient pointer-events-none -z-10" />
+
       {/* Navigation */}
-      <nav className="fixed top-0 w-full z-50 bg-white/70 backdrop-blur-md border-b border-border/50 px-6 py-4 flex justify-between items-center">
-        <div className="flex items-center gap-2">
-          <div className="bg-primary p-1.5 rounded-lg">
-            <Building2 className="w-5 h-5 text-white" />
+      <nav className="fixed top-0 w-full z-50 px-6 py-6">
+        <div className="max-w-7xl mx-auto flex justify-between items-center glass rounded-2xl px-6 py-4 animate-fade-in">
+          <div className="flex items-center gap-3">
+            <div className="bg-primary p-2 rounded-xl shadow-lg shadow-primary/20">
+              <Building2 className="w-6 h-6 text-white" />
+            </div>
+            <span className="text-2xl font-bold tracking-tight text-primary">MoonSync Pro</span>
           </div>
-          <span className="text-xl font-bold tracking-tight text-primary">MoonSync Pro</span>
+          <div className="hidden md:flex items-center gap-8 text-sm font-semibold text-slate-600">
+            <a href="#" className="hover:text-primary transition-colors">Features</a>
+            <a href="#" className="hover:text-primary transition-colors">Network</a>
+            <a href="#" className="hover:text-primary transition-colors">Security</a>
+          </div>
+          <Button onClick={scrollToPortal} className="rounded-full px-8 font-bold bg-primary hover:bg-primary/90 shadow-xl shadow-primary/20 transition-all hover:scale-105 active:scale-95">
+            Access Portal
+          </Button>
         </div>
-        <Button variant="default" onClick={scrollToLogin} className="rounded-full px-6 font-semibold shadow-lg shadow-primary/20">
-          Enter Portal
-        </Button>
       </nav>
 
       {/* Hero Section */}
-      <header className="relative pt-32 pb-20 px-6 overflow-hidden">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full -z-10 opacity-30">
-          <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-primary/20 rounded-full blur-[120px] animate-pulse" />
-          <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-accent/20 rounded-full blur-[120px] animate-pulse delay-700" />
-        </div>
+      <header className="pt-48 pb-32 px-6">
+        <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 items-center">
+          <div className="space-y-8 animate-fade-in">
+            <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-white border border-slate-200 shadow-sm text-primary text-xs font-bold uppercase tracking-widest">
+              <Zap className="w-3 h-3 fill-current" />
+              MOONSYNC PRO by JAGEER
+            </div>
+            <h1 className="text-6xl md:text-8xl font-black tracking-tighter leading-[0.9] text-slate-900">
+              The Engine of <br />
+              <span className="text-primary italic">Precision</span> IT.
+            </h1>
+            <p className="text-xl text-slate-600 max-w-xl leading-relaxed font-medium">
+              Synchronize your entire infrastructure. From AI-driven technical blueprints to granular departmental analytics, MoonSync Pro is the ultimate terminal for modern service delivery.
+            </p>
+            <div className="flex flex-wrap gap-4 pt-4">
+              <Button size="lg" onClick={scrollToPortal} className="h-16 px-10 text-lg rounded-2xl shadow-2xl shadow-primary/30 font-bold bg-primary group transition-all hover:-translate-y-1">
+                Launch Command
+                <ArrowRight className="ml-2 w-6 h-6 group-hover:translate-x-1 transition-transform" />
+              </Button>
+              <div className="flex items-center gap-4 px-6 h-16 rounded-2xl border-2 border-slate-200 bg-white/50 backdrop-blur font-bold text-slate-700">
+                <Activity className="w-5 h-5 text-emerald-500" />
+                99.99% Uptime
+              </div>
+            </div>
+          </div>
 
-        <div className="max-w-6xl mx-auto text-center space-y-8 animate-fade-in">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/5 border border-primary/10 text-primary text-sm font-semibold mb-4">
-            MOONSYNC PRO by JAGEER
-          </div>
-          <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight text-slate-900 leading-[1.1]">
-            Synchronize Your <span className="text-primary">Enterprise</span> <br />
-            with Precision.
-          </h1>
-          <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-            MoonSync Pro is the ultimate ERP infrastructure for modern IT service firms. 
-            From AI-driven task refinement to granular performance analytics, we bridge the gap between marketing and execution.
-          </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-            <Button size="lg" onClick={scrollToLogin} className="h-14 px-8 text-lg rounded-xl shadow-xl shadow-primary/20 font-bold group">
-              Launch Command Center
-              <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            </Button>
-            <Button variant="outline" size="lg" className="h-14 px-8 text-lg rounded-xl border-2 font-semibold">
-              View Capabilities
-            </Button>
-          </div>
-          
-          <div className="relative pt-16 max-w-5xl mx-auto">
-            <div className="rounded-2xl overflow-hidden border-4 border-white shadow-[0_32px_64px_-12px_rgba(0,0,0,0.14)] relative">
+          <div className="relative animate-fade-in" style={{ animationDelay: '200ms' }}>
+            <div className="relative z-10 p-4 glass rounded-[2.5rem] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.15)]">
                <Image 
                 src={getImageUrl('hero-dashboard')} 
                 alt="MoonSync Dashboard" 
                 width={1200} 
                 height={800}
-                className="w-full object-cover"
+                className="w-full rounded-[1.8rem] object-cover border border-slate-200/50"
                 priority
                 data-ai-hint={getImageHint('hero-dashboard')}
               />
             </div>
-            {/* Floating Stats Card Placeholder */}
-            <div className="absolute -bottom-6 -right-6 md:bottom-12 md:-right-12 bg-white p-6 rounded-2xl shadow-2xl border border-border/50 animate-bounce-slow hidden sm:block">
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-green-50 rounded-xl">
-                  <CheckCircle2 className="w-8 h-8 text-green-500" />
+            
+            {/* Abstract Decorative Elements */}
+            <div className="absolute -top-12 -right-12 w-64 h-64 bg-accent/20 rounded-full blur-3xl animate-pulse-slow -z-10" />
+            <div className="absolute -bottom-12 -left-12 w-64 h-64 bg-primary/10 rounded-full blur-3xl animate-pulse-slow -z-10" />
+            
+            {/* Floating Stats */}
+            <div className="absolute top-1/4 -right-12 glass p-5 rounded-2xl shadow-2xl animate-float hidden xl:block">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-primary/10 rounded-lg text-primary">
+                  <CheckCircle2 className="w-6 h-6" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Monthly Output</p>
-                  <p className="text-2xl font-bold text-slate-900">+142% Tasks</p>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Sync Status</p>
+                  <p className="text-sm font-black">All Systems Nominal</p>
                 </div>
               </div>
             </div>
@@ -135,128 +147,149 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Features Section */}
-      <section className="py-24 bg-slate-50 relative">
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="text-center mb-20 space-y-4">
-            <h2 className="text-3xl md:text-4xl font-bold text-slate-900">Engineered for Performance</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              A comprehensive suite of tools designed to optimize every aspect of your service delivery lifecycle.
-            </p>
+      {/* Features Grid */}
+      <section className="py-32 px-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex flex-col md:flex-row justify-between items-end gap-8 mb-20">
+            <div className="space-y-4">
+              <h2 className="text-4xl md:text-5xl font-black tracking-tight text-slate-900">Engineered for Scale</h2>
+              <p className="text-lg text-slate-500 max-w-xl">
+                Custom-built architecture designed to eliminate friction between marketing capture and technical execution.
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <div className="w-12 h-1 rounded-full bg-primary" />
+              <div className="w-12 h-1 rounded-full bg-slate-200" />
+              <div className="w-12 h-1 rounded-full bg-slate-200" />
+            </div>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-12">
+          <div className="grid md:grid-cols-2 gap-8">
             {features.map((feature, i) => (
-              <div key={i} className="bg-white rounded-3xl p-8 border border-border/50 shadow-sm hover:shadow-xl transition-all group">
-                <div className="mb-6 inline-block p-4 bg-primary/5 rounded-2xl text-primary group-hover:bg-primary group-hover:text-white transition-colors">
-                  <feature.icon className="w-8 h-8" />
+              <div key={i} className="group relative bg-white rounded-[2.5rem] p-10 border border-slate-200/60 shadow-sm hover:shadow-2xl hover:-translate-y-2 transition-all duration-500">
+                <div className="flex justify-between items-start mb-10">
+                  <div className="p-5 bg-slate-50 rounded-2xl text-primary group-hover:bg-primary group-hover:text-white transition-all duration-300">
+                    <feature.icon className="w-8 h-8" />
+                  </div>
+                  <div className="text-4xl font-black text-slate-100 group-hover:text-primary/10 transition-colors">0{i+1}</div>
                 </div>
-                <h3 className="text-2xl font-bold mb-4">{feature.title}</h3>
-                <p className="text-muted-foreground mb-8 text-lg">
+                <h3 className="text-3xl font-black mb-4 tracking-tight">{feature.title}</h3>
+                <p className="text-slate-500 mb-10 text-lg leading-relaxed">
                   {feature.desc}
                 </p>
-                <div className="rounded-2xl overflow-hidden border border-border/30">
+                <div className="relative overflow-hidden rounded-2xl border border-slate-100">
                   <Image 
                     src={getImageUrl(feature.imageId)} 
                     alt={feature.title} 
                     width={600} 
                     height={400}
-                    className="w-full object-cover aspect-video"
+                    className="w-full object-cover aspect-video group-hover:scale-105 transition-transform duration-700"
                     data-ai-hint={getImageHint(feature.imageId)}
                   />
                 </div>
               </div>
             ))}
           </div>
-
-          <div className="mt-20 grid grid-cols-2 md:grid-cols-4 gap-8">
-            {[
-              { label: "Active Organizations", value: "500+", icon: Building2 },
-              { label: "Successful Deployments", value: "12k+", icon: CheckCircle2 },
-              { label: "Satisfied Personnel", value: "45k+", icon: Users2 },
-              { label: "Uptime SLA", value: "99.99%", icon: ShieldCheck },
-            ].map((stat, i) => (
-              <div key={i} className="text-center space-y-2">
-                <div className="flex justify-center mb-2">
-                  <stat.icon className="w-6 h-6 text-primary/60" />
-                </div>
-                <p className="text-3xl font-bold text-slate-900">{stat.value}</p>
-                <p className="text-sm text-muted-foreground uppercase tracking-wider font-semibold">{stat.label}</p>
-              </div>
-            ))}
-          </div>
         </div>
       </section>
 
-      {/* Portal Access Section */}
-      <section ref={loginSectionRef} className="py-24 px-6 relative overflow-hidden bg-primary/5">
-        <div className="max-w-6xl mx-auto relative z-10">
-          <div className="space-y-12 animate-in fade-in duration-1000">
-            <div className="text-center space-y-4">
-              <div className="flex justify-center">
-                <div className="p-5 bg-primary rounded-3xl shadow-2xl animate-pulse ring-8 ring-primary/5">
-                  <ShieldCheck className="w-16 h-16 text-white" />
+      {/* Portal Access - The "Terminal" */}
+      <section ref={portalSectionRef} className="py-40 px-6 relative">
+        <div className="max-w-7xl mx-auto">
+          <div className="bg-slate-900 rounded-[3rem] p-12 md:p-20 relative overflow-hidden shadow-[0_50px_100px_-30px_rgba(0,0,0,0.5)]">
+            {/* Visual background noise/dots for the terminal feel */}
+            <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#fff 1px, transparent 0)', backgroundSize: '24px 24px' }} />
+            
+            <div className="relative z-10 space-y-20">
+              <div className="text-center space-y-6">
+                <div className="flex justify-center">
+                  <div className="p-6 bg-primary/20 rounded-3xl ring-1 ring-primary/50 animate-pulse">
+                    <Lock className="w-12 h-12 text-primary" />
+                  </div>
                 </div>
+                <h2 className="text-5xl md:text-7xl font-black text-white tracking-tighter">Initialize Terminal</h2>
+                <p className="text-xl text-slate-400 max-w-2xl mx-auto">
+                  Select your departmental signature to establish a secure link with the MoonSync infrastructure.
+                </p>
               </div>
-              <h2 className="text-5xl font-extrabold text-slate-900 pt-4">Direct Terminal Access</h2>
-              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-                Select your departmental persona to initialize your specialized terminal workspace.
-              </p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {personas.map((persona, idx) => (
+                  <Card 
+                    key={persona.role} 
+                    className={cn(
+                      "group bg-white/5 border-white/10 hover:bg-white/10 hover:border-primary/50 transition-all duration-500 cursor-pointer rounded-[2rem] overflow-hidden backdrop-blur-sm",
+                      "animate-fade-in"
+                    )}
+                    style={{ animationDelay: `${idx * 150}ms` }}
+                    onClick={() => login(persona.role as any)}
+                  >
+                    <CardHeader className="p-8 space-y-6">
+                      <div className={cn("w-16 h-16 rounded-2xl flex items-center justify-center bg-gradient-to-br shadow-lg group-hover:scale-110 transition-transform duration-300", persona.color)}>
+                        <persona.icon className="w-8 h-8 text-white" />
+                      </div>
+                      <div className="space-y-2">
+                        <CardTitle className="text-2xl font-bold text-white tracking-tight">{persona.role}</CardTitle>
+                        <CardDescription className="text-slate-400 text-sm leading-relaxed font-medium">
+                          {persona.desc}
+                        </CardDescription>
+                      </div>
+                    </CardHeader>
+                    <CardFooter className="p-8 pt-0">
+                      <Button variant="ghost" className="w-full h-14 rounded-xl text-white border border-white/10 hover:bg-primary hover:text-white transition-all font-bold text-sm tracking-widest uppercase">
+                        Sync Interface
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                ))}
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-              {personas.map((persona, idx) => (
-                <Card 
-                  key={persona.role} 
-                  className={cn(
-                    "flex flex-col h-full hover:shadow-2xl transition-all cursor-pointer border-2 hover:border-primary group bg-white/80 backdrop-blur-md rounded-3xl overflow-hidden",
-                    "animate-in slide-in-from-bottom-12 duration-700 fill-mode-both"
-                  )}
-                  style={{ animationDelay: `${idx * 150}ms` }}
-                  onClick={() => login(persona.role as any)}
-                >
-                  <CardHeader className="space-y-4 flex-1 flex flex-col items-center justify-center p-8 text-center">
-                    <div className="p-4 rounded-2xl bg-primary/5 group-hover:bg-primary group-hover:text-white transition-all duration-300 mb-2">
-                      <persona.icon className="w-12 h-12 text-primary group-hover:scale-110 transition-transform" />
-                    </div>
-                    <CardTitle className="text-2xl font-bold text-slate-900">{persona.role}</CardTitle>
-                    <CardDescription className="text-base leading-relaxed">
-                      {persona.desc}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardFooter className="p-8 pt-0 mt-auto">
-                    <Button variant="outline" className="w-full h-12 font-bold rounded-xl group-hover:bg-primary group-hover:text-white group-hover:border-primary transition-all duration-300">
-                      Access Hub
-                    </Button>
-                  </CardFooter>
-                </Card>
-              ))}
-            </div>
+            {/* Glowing Accent */}
+            <div className="absolute -bottom-48 -right-48 w-96 h-96 bg-primary/30 rounded-full blur-[120px] pointer-events-none" />
           </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="py-20 border-t border-border/50 bg-white">
-        <div className="max-w-6xl mx-auto px-6 text-center space-y-10">
-          <div className="flex flex-col items-center gap-4">
-            <div className="flex items-center gap-2">
-              <div className="bg-primary/10 p-2 rounded-xl">
-                <Building2 className="w-8 h-8 text-primary" />
+      <footer className="py-24 border-t border-slate-200 bg-white">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid md:grid-cols-4 gap-12 mb-20">
+            <div className="col-span-2 space-y-6">
+              <div className="flex items-center gap-3">
+                <div className="bg-primary p-2 rounded-xl">
+                  <Building2 className="w-6 h-6 text-white" />
+                </div>
+                <span className="text-2xl font-bold tracking-tight text-slate-900">MoonSync Pro</span>
               </div>
-              <span className="text-2xl font-bold tracking-tight text-slate-900">MoonSync Pro</span>
+              <p className="text-lg text-slate-500 max-w-sm leading-relaxed">
+                Enterprise-grade IT Service Management. Built for teams that demand precision, performance, and synchronization.
+              </p>
             </div>
-            <p className="text-muted-foreground max-w-lg">
-              Enterprise-grade IT Service Management for teams that demand absolute synchronization and performance.
-            </p>
+            <div className="space-y-6">
+              <h4 className="font-black uppercase tracking-widest text-xs text-slate-400">Company</h4>
+              <ul className="space-y-4 font-bold text-slate-600">
+                <li><a href="#" className="hover:text-primary transition-colors">Our Ethos</a></li>
+                <li><a href="#" className="hover:text-primary transition-colors">Architecture</a></li>
+                <li><a href="#" className="hover:text-primary transition-colors">Security Audit</a></li>
+              </ul>
+            </div>
+            <div className="space-y-6">
+              <h4 className="font-black uppercase tracking-widest text-xs text-slate-400">Legal</h4>
+              <ul className="space-y-4 font-bold text-slate-600">
+                <li><a href="#" className="hover:text-primary transition-colors">Privacy Policy</a></li>
+                <li><a href="#" className="hover:text-primary transition-colors">Terminal Terms</a></li>
+                <li><a href="#" className="hover:text-primary transition-colors">SLA Agreement</a></li>
+              </ul>
+            </div>
           </div>
           
-          <div className="pt-8 border-t border-border/30 space-y-4">
-            <p className="text-sm font-bold uppercase tracking-[0.4em] text-primary/40">
+          <div className="pt-12 border-t border-slate-100 text-center space-y-4">
+            <p className="text-xs font-black uppercase tracking-[0.6em] text-primary/40">
               ROSHAN TAMANG
             </p>
-            <p className="text-xs text-muted-foreground/40 uppercase tracking-widest font-medium">
-              &copy; 2024 MoonSync Pro Infrastructure. All Rights Reserved.
+            <p className="text-[10px] text-slate-400 uppercase tracking-[0.2em] font-bold">
+              &copy; 2024 MoonSync Pro Terminal. All Rights Reserved.
             </p>
           </div>
         </div>

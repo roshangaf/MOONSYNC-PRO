@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -24,7 +23,7 @@
     --border: 225 20% 85%;
     --input: 225 20% 85%;
     --ring: 228 60% 40%;
-    --radius: 0.75rem;
+    --radius: 1rem;
     --chart-1: 228 60% 40%;
     --chart-2: 200 80% 59%;
     --chart-3: 225 30% 95%;
@@ -60,24 +59,46 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground font-body;
+    @apply bg-background text-foreground font-body antialiased;
   }
 }
 
 .animate-fade-in {
-  animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: fadeIn 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-.animate-bounce-slow {
-  animation: bounceSlow 3s infinite ease-in-out;
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-float-delayed {
+  animation: float 6s ease-in-out infinite 3s;
+}
+
+.animate-pulse-slow {
+  animation: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(20px); }
+  from { opacity: 0; transform: translateY(30px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes bounceSlow {
+@keyframes float {
   0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
+  50% { transform: translateY(-20px); }
+}
+
+.glass {
+  @apply bg-white/40 backdrop-blur-xl border border-white/40 shadow-xl;
+}
+
+.glass-dark {
+  @apply bg-slate-900/10 backdrop-blur-md border border-white/10;
+}
+
+.mesh-gradient {
+  background: radial-gradient(at 0% 0%, hsla(228, 60%, 40%, 0.1) 0, transparent 50%),
+              radial-gradient(at 50% 0%, hsla(200, 80%, 59%, 0.1) 0, transparent 50%),
+              radial-gradient(at 100% 0%, hsla(228, 60%, 40%, 0.1) 0, transparent 50%);
 }
