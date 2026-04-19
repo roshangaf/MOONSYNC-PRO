@@ -26,11 +26,6 @@ import { PlaceHolderImages } from "@/lib/placeholder-images";
 
 export default function Home() {
   const { login } = useAuth();
-  const portalSectionRef = useRef<HTMLDivElement>(null);
-
-  const scrollToPortal = () => {
-    portalSectionRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
 
   const personas = [
     { role: 'Admin', icon: ShieldCheck, desc: 'Complete organizational oversight and user provisioning.', color: 'from-blue-500 to-indigo-600' },
@@ -81,8 +76,8 @@ export default function Home() {
             <a href="#" className="hover:text-primary transition-colors">Network</a>
             <a href="#" className="hover:text-primary transition-colors">Security</a>
           </div>
-          <Button onClick={scrollToPortal} className="rounded-full px-8 font-bold bg-primary hover:bg-primary/90 shadow-xl shadow-primary/20 transition-all hover:scale-105 active:scale-95">
-            Access Portal
+          <Button onClick={() => login('Admin')} className="rounded-full px-8 font-bold bg-primary hover:bg-primary/90 shadow-xl shadow-primary/20 transition-all hover:scale-105 active:scale-95">
+            Admin Login
           </Button>
         </div>
       </nav>
@@ -103,7 +98,7 @@ export default function Home() {
               Synchronize your entire infrastructure. From AI-driven technical blueprints to granular departmental analytics, MoonSync Pro is the ultimate terminal for modern service delivery.
             </p>
             <div className="flex flex-wrap gap-4 pt-4">
-              <Button size="lg" onClick={scrollToPortal} className="h-16 px-10 text-lg rounded-2xl shadow-2xl shadow-primary/30 font-bold bg-primary group transition-all hover:-translate-y-1">
+              <Button size="lg" onClick={() => login('Admin')} className="h-16 px-10 text-lg rounded-2xl shadow-2xl shadow-primary/30 font-bold bg-primary group transition-all hover:-translate-y-1">
                 Launch Command
                 <ArrowRight className="ml-2 w-6 h-6 group-hover:translate-x-1 transition-transform" />
               </Button>
@@ -193,60 +188,26 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Portal Access - The "Terminal" */}
-      <section ref={portalSectionRef} className="py-40 px-6 relative">
-        <div className="max-w-7xl mx-auto">
-          <div className="bg-slate-900 rounded-[3rem] p-12 md:p-20 relative overflow-hidden shadow-[0_50px_100px_-30px_rgba(0,0,0,0.5)]">
-            {/* Visual background noise/dots for the terminal feel */}
-            <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#fff 1px, transparent 0)', backgroundSize: '24px 24px' }} />
-            
-            <div className="relative z-10 space-y-20">
-              <div className="text-center space-y-6">
-                <div className="flex justify-center">
-                  <div className="p-6 bg-primary/20 rounded-3xl ring-1 ring-primary/50 animate-pulse">
-                    <Lock className="w-12 h-12 text-primary" />
-                  </div>
+      {/* Persona Quick Links (Alternative to Terminal) */}
+      <section className="py-24 px-6 bg-slate-50/50">
+        <div className="max-w-7xl mx-auto text-center space-y-12">
+          <div className="space-y-4">
+            <h2 className="text-3xl font-bold tracking-tight">Access Your Interface</h2>
+            <p className="text-slate-500">Quickly jump into your departmental dashboard.</p>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {personas.map((persona) => (
+              <button 
+                key={persona.role}
+                onClick={() => login(persona.role as any)}
+                className="group p-6 bg-white border border-slate-200 rounded-2xl hover:border-primary/50 hover:shadow-lg transition-all text-center space-y-3"
+              >
+                <div className={cn("w-10 h-10 mx-auto rounded-lg flex items-center justify-center bg-gradient-to-br text-white", persona.color)}>
+                  <persona.icon className="w-5 h-5" />
                 </div>
-                <h2 className="text-5xl md:text-7xl font-black text-white tracking-tighter">Initialize Terminal</h2>
-                <p className="text-xl text-slate-400 max-w-2xl mx-auto">
-                  Select your departmental signature to establish a secure link with the MoonSync infrastructure.
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                {personas.map((persona, idx) => (
-                  <Card 
-                    key={persona.role} 
-                    className={cn(
-                      "group bg-white/5 border-white/10 hover:bg-white/10 hover:border-primary/50 transition-all duration-500 cursor-pointer rounded-[2rem] overflow-hidden backdrop-blur-sm",
-                      "animate-fade-in"
-                    )}
-                    style={{ animationDelay: `${idx * 150}ms` }}
-                    onClick={() => login(persona.role as any)}
-                  >
-                    <CardHeader className="p-8 space-y-6">
-                      <div className={cn("w-16 h-16 rounded-2xl flex items-center justify-center bg-gradient-to-br shadow-lg group-hover:scale-110 transition-transform duration-300", persona.color)}>
-                        <persona.icon className="w-8 h-8 text-white" />
-                      </div>
-                      <div className="space-y-2">
-                        <CardTitle className="text-2xl font-bold text-white tracking-tight">{persona.role}</CardTitle>
-                        <CardDescription className="text-slate-400 text-sm leading-relaxed font-medium">
-                          {persona.desc}
-                        </CardDescription>
-                      </div>
-                    </CardHeader>
-                    <CardFooter className="p-8 pt-0">
-                      <Button variant="ghost" className="w-full h-14 rounded-xl text-white border border-white/10 hover:bg-primary hover:text-white transition-all font-bold text-sm tracking-widest uppercase">
-                        Sync Interface
-                      </Button>
-                    </CardFooter>
-                  </Card>
-                ))}
-              </div>
-            </div>
-
-            {/* Glowing Accent */}
-            <div className="absolute -bottom-48 -right-48 w-96 h-96 bg-primary/30 rounded-full blur-[120px] pointer-events-none" />
+                <span className="block font-bold text-sm">{persona.role}</span>
+              </button>
+            ))}
           </div>
         </div>
       </section>
