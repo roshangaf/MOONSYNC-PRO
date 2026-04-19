@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect } from "react"
@@ -8,8 +9,9 @@ import { Badge } from "@/components/ui/badge"
 import { useAuth } from "@/components/auth-context"
 import { MOCK_TASKS, MOCK_USERS } from "@/lib/store"
 import { useToast } from "@/hooks/use-toast"
-import { Clock, Play, Square, UserPlus, CheckCircle, ArrowLeft, UserCheck, Phone, MapPin, User, Calendar, CheckCircle2 } from "lucide-react"
+import { Clock, Play, Square, UserPlus, CheckCircle, ArrowLeft, UserCheck, Phone, MapPin, User, Calendar, Settings2 } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { TaskStatus } from "@/lib/types"
 
 export default function TaskDetailPage() {
   const { id } = useParams()
@@ -25,6 +27,16 @@ export default function TaskDetailPage() {
   const getStaffName = (id?: string) => {
     return MOCK_USERS.find(u => u.id === id)?.name || "Unknown Personnel";
   };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'Completed': return 'secondary';
+      case 'In Progress': return 'default';
+      case 'On Hold': return 'destructive';
+      case 'Assigned': return 'outline';
+      default: return 'outline';
+    }
+  }
 
   useEffect(() => {
     let interval: any;
@@ -46,6 +58,14 @@ export default function TaskDetailPage() {
     toast({
       title: "Task Assigned",
       description: `Task assigned to ${MOCK_USERS.find(u => u.id === assigneeId)?.name}`,
+    });
+  };
+
+  const handleStatusChange = (newStatus: TaskStatus) => {
+    setTask({ ...task, status: newStatus });
+    toast({
+      title: "Status Updated",
+      description: `Task status changed to ${newStatus}`,
     });
   };
 
@@ -71,6 +91,8 @@ export default function TaskDetailPage() {
     return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const canManageStatus = user?.role === 'Admin' || (user?.role === 'Technician' && task.assignedTo === user.id);
+
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <Button variant="ghost" onClick={() => router.back()} className="-ml-2 hover:bg-primary/5 text-primary font-bold">
@@ -83,7 +105,7 @@ export default function TaskDetailPage() {
           <Card className="shadow-lg border-none">
             <CardHeader className="border-b bg-muted/20">
               <div className="flex items-center justify-between mb-4">
-                <Badge variant={task.status === 'Completed' ? 'secondary' : 'default'} className="font-bold uppercase tracking-widest">{task.status}</Badge>
+                <Badge variant={getStatusColor(task.status)} className="font-bold uppercase tracking-widest">{task.status}</Badge>
                 <Badge variant="outline" className="font-bold border-primary text-primary">{task.priority} Priority</Badge>
               </div>
               <CardTitle className="text-3xl font-black tracking-tight text-slate-900">{task.title}</CardTitle>
@@ -155,6 +177,34 @@ export default function TaskDetailPage() {
         </div>
 
         <div className="w-full md:w-80 space-y-6">
+          {canManageStatus && (
+             <Card className="border-primary bg-primary/5">
+                <CardHeader>
+                  <CardTitle className="text-sm font-bold flex items-center gap-2 uppercase tracking-tighter text-primary">
+                    <Settings2 className="h-4 w-4" />
+                    Status Control
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Modify Status</label>
+                    <Select value={task.status} onValueChange={(v) => handleStatusChange(v as TaskStatus)}>
+                      <SelectTrigger className="bg-white">
+                        <SelectValue placeholder="Update Status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Pending">Pending</SelectItem>
+                        <SelectItem value="Assigned">Assigned</SelectItem>
+                        <SelectItem value="In Progress">In Progress</SelectItem>
+                        <SelectItem value="On Hold">On Hold</SelectItem>
+                        <SelectItem value="Completed">Completed</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </CardContent>
+             </Card>
+          )}
+
           {user?.role === 'Admin' && task.status !== 'Completed' && (
             <Card className="border-accent bg-accent/5">
               <CardHeader>
@@ -210,7 +260,7 @@ export default function TaskDetailPage() {
                   variant="outline" 
                   className="w-full border-primary text-primary font-bold" 
                   disabled={isLoggingTime || task.status === 'Completed'}
-                  onClick={toggleTimeLogging}
+                  onClick={() => handleStatusChange('Completed')}
                 >
                   <CheckCircle className="mr-2 h-4 w-4" />
                   Finalize Job

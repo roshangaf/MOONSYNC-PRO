@@ -48,6 +48,16 @@ export default function TasksPage() {
     }
   }
 
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'Completed': return 'secondary';
+      case 'In Progress': return 'default';
+      case 'On Hold': return 'destructive';
+      case 'Assigned': return 'outline';
+      default: return 'outline';
+    }
+  }
+
   const handleDownloadReport = () => {
     toast({
       title: "Generating Task Audit Report",
@@ -140,7 +150,7 @@ export default function TasksPage() {
             <DropdownMenuSeparator />
             <div className="p-2">
               <p className="text-[10px] font-bold uppercase text-muted-foreground mb-2">Status</p>
-              {["Pending", "Assigned", "In Progress", "Completed"].map((s) => (
+              {["Pending", "Assigned", "In Progress", "Completed", "On Hold"].map((s) => (
                 <DropdownMenuCheckboxItem
                   key={s}
                   checked={filterStatus.includes(s)}
@@ -194,7 +204,7 @@ export default function TasksPage() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={task.status === 'Completed' ? 'secondary' : 'default'} className="rounded-md font-bold uppercase text-[10px]">
+                    <Badge variant={getStatusColor(task.status)} className="rounded-md font-bold uppercase text-[10px]">
                       {task.status}
                     </Badge>
                   </TableCell>
