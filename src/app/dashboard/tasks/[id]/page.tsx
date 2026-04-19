@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useEffect } from "react"
@@ -9,7 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { useAuth } from "@/components/auth-context"
 import { MOCK_TASKS, MOCK_USERS } from "@/lib/store"
 import { useToast } from "@/hooks/use-toast"
-import { Clock, Play, Square, UserPlus, CheckCircle, ArrowLeft, UserCheck, Phone, MapPin, User, Calendar } from "lucide-react"
+import { Clock, Play, Square, UserPlus, CheckCircle, ArrowLeft, UserCheck, Phone, MapPin, User, Calendar, CheckCircle2 } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 export default function TaskDetailPage() {
@@ -52,12 +51,13 @@ export default function TaskDetailPage() {
 
   const toggleTimeLogging = () => {
     if (isLoggingTime) {
+      const completionTime = new Date().toISOString();
       toast({
         title: "Work Session Stopped",
-        description: `Logged ${Math.floor(timer / 60)} minutes of work.`,
+        description: `Logged ${Math.floor(timer / 60)} minutes of work. Job marked completed at ${new Date(completionTime).toLocaleTimeString()}.`,
       });
       setIsLoggingTime(false);
-      setTask({ ...task, status: 'Completed' });
+      setTask({ ...task, status: 'Completed', completedAt: completionTime });
     } else {
       setIsLoggingTime(true);
       setTask({ ...task, status: 'In Progress' });
@@ -155,7 +155,7 @@ export default function TaskDetailPage() {
         </div>
 
         <div className="w-full md:w-80 space-y-6">
-          {user?.role === 'Admin' && (
+          {user?.role === 'Admin' && task.status !== 'Completed' && (
             <Card className="border-accent bg-accent/5">
               <CardHeader>
                 <CardTitle className="text-sm font-bold flex items-center gap-2 uppercase tracking-tighter">
@@ -182,7 +182,7 @@ export default function TaskDetailPage() {
             </Card>
           )}
 
-          {user?.role === 'Technician' && task.assignedTo === user.id && (
+          {user?.role === 'Technician' && task.assignedTo === user.id && task.status !== 'Completed' && (
             <Card className="border-primary bg-primary/5 shadow-xl shadow-primary/10">
               <CardHeader>
                 <CardTitle className="text-sm font-bold flex items-center gap-2 uppercase tracking-tighter text-primary">
@@ -206,7 +206,12 @@ export default function TaskDetailPage() {
                 </Button>
               </CardContent>
               <CardFooter>
-                <Button variant="outline" className="w-full border-primary text-primary font-bold" disabled={isLoggingTime || task.status === 'Completed'}>
+                <Button 
+                  variant="outline" 
+                  className="w-full border-primary text-primary font-bold" 
+                  disabled={isLoggingTime || task.status === 'Completed'}
+                  onClick={toggleTimeLogging}
+                >
                   <CheckCircle className="mr-2 h-4 w-4" />
                   Finalize Job
                 </Button>
@@ -227,6 +232,12 @@ export default function TaskDetailPage() {
                 <span className="text-muted-foreground font-bold text-[10px] uppercase">Listing Timestamp</span>
                 <span className="font-mono text-[10px] font-bold">{new Date(task.createdAt).toLocaleTimeString()}</span>
               </div>
+              {task.completedAt && (
+                <div className="flex justify-between items-center py-2 border-b border-slate-50 bg-emerald-50/50">
+                  <span className="text-emerald-700 font-bold text-[10px] uppercase">Finalized At</span>
+                  <span className="font-mono text-[10px] font-bold text-emerald-700">{new Date(task.completedAt).toLocaleTimeString()}</span>
+                </div>
+              )}
               <div className="flex justify-between items-center py-2 border-b border-slate-50">
                 <span className="text-muted-foreground font-bold text-[10px] uppercase">Org Dept</span>
                 <span className="font-bold text-xs">IT SERVICES</span>

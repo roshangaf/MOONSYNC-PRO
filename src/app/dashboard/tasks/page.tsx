@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useEffect } from "react"
@@ -50,8 +49,8 @@ export default function TasksPage() {
 
   const handleDownloadReport = () => {
     toast({
-      title: "Generating Task Report",
-      description: "Compiling comprehensive ledger including listing timestamps and personnel metadata.",
+      title: "Generating Task Audit Report",
+      description: "Compiling comprehensive ledger including listing timestamps, personnel metadata, and high-precision completion records.",
     });
   };
 

@@ -29,6 +29,7 @@ export interface Task {
   assignedTo?: string; // User ID
   createdAt: string;
   updatedAt: string;
+  completedAt?: string;
   timeLogs: TimeLog[];
 }
 
