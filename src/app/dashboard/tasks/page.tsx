@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect } from "react"
@@ -89,10 +90,12 @@ export default function TasksPage() {
           <p className="text-muted-foreground">Track and manage service requests across all departments with precise timestamps.</p>
         </div>
         <div className="flex items-center gap-3">
-          <Button variant="outline" onClick={handleDownloadReport} className="border-primary text-primary hover:bg-primary/5">
-            <Download className="mr-2 h-4 w-4" />
-            Download Audit Report
-          </Button>
+          {user?.role === 'Admin' && (
+            <Button variant="outline" onClick={handleDownloadReport} className="border-primary text-primary hover:bg-primary/5">
+              <Download className="mr-2 h-4 w-4" />
+              Download Audit Report
+            </Button>
+          )}
           <Button asChild className="bg-accent hover:bg-accent/90 text-white shadow-lg shadow-accent/20">
             <Link href="/dashboard/tasks/new">
               <Plus className="mr-2 h-4 w-4" />
