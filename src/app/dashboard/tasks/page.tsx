@@ -9,11 +9,13 @@ import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { MOCK_TASKS, MOCK_USERS } from "@/lib/store"
 import { useAuth } from "@/components/auth-context"
-import { Briefcase, Filter, Plus, Search, UserCircle } from "lucide-react"
+import { Briefcase, Filter, Plus, Search, Download, Calendar } from "lucide-react"
 import Link from "next/link"
+import { useToast } from "@/hooks/use-toast"
 
 export default function TasksPage() {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
 
   const getStaffName = (id?: string) => {
@@ -29,6 +31,13 @@ export default function TasksPage() {
     }
   }
 
+  const handleDownloadReport = () => {
+    toast({
+      title: "Generating Task Report",
+      description: "Compiling comprehensive ledger including listing timestamps and personnel metadata.",
+    });
+  };
+
   const filteredTasks = MOCK_TASKS.filter(t => 
     t.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     t.description.toLowerCase().includes(searchTerm.toLowerCase())
@@ -36,17 +45,23 @@ export default function TasksPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1">
           <h1 className="text-3xl font-bold tracking-tight text-primary">Job & Task Portal</h1>
-          <p className="text-muted-foreground">Track and manage service requests across all departments.</p>
+          <p className="text-muted-foreground">Track and manage service requests across all departments with precise timestamps.</p>
         </div>
-        <Button asChild className="bg-accent hover:bg-accent/90 text-white shadow-lg shadow-accent/20">
-          <Link href="/dashboard/tasks/new">
-            <Plus className="mr-2 h-4 w-4" />
-            Add Job
-          </Link>
-        </Button>
+        <div className="flex items-center gap-3">
+          <Button variant="outline" onClick={handleDownloadReport} className="border-primary text-primary hover:bg-primary/5">
+            <Download className="mr-2 h-4 w-4" />
+            Download Audit Report
+          </Button>
+          <Button asChild className="bg-accent hover:bg-accent/90 text-white shadow-lg shadow-accent/20">
+            <Link href="/dashboard/tasks/new">
+              <Plus className="mr-2 h-4 w-4" />
+              Add Job
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <div className="flex items-center gap-4">
@@ -69,12 +84,12 @@ export default function TasksPage() {
           <Table>
             <TableHeader className="bg-muted/50">
               <TableRow>
-                <TableHead className="font-bold">Task Title / Job</TableHead>
-                <TableHead className="font-bold">Status</TableHead>
-                <TableHead className="font-bold">Priority</TableHead>
-                <TableHead className="font-bold">Listed By</TableHead>
-                <TableHead className="font-bold">Assigned To</TableHead>
-                <TableHead className="text-right font-bold">Actions</TableHead>
+                <TableHead className="font-bold text-xs uppercase">Task Title / Job</TableHead>
+                <TableHead className="font-bold text-xs uppercase">Listed At</TableHead>
+                <TableHead className="font-bold text-xs uppercase">Status</TableHead>
+                <TableHead className="font-bold text-xs uppercase">Priority</TableHead>
+                <TableHead className="font-bold text-xs uppercase">Listed By</TableHead>
+                <TableHead className="text-right font-bold text-xs uppercase">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -84,6 +99,12 @@ export default function TasksPage() {
                     <div className="flex flex-col">
                       <span className="font-bold text-sm text-slate-900">{task.title}</span>
                       <span className="text-xs text-muted-foreground line-clamp-1">{task.description}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-mono">
+                      <Calendar className="h-3 w-3" />
+                      {new Date(task.createdAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
                     </div>
                   </TableCell>
                   <TableCell>
@@ -102,14 +123,6 @@ export default function TasksPage() {
                         {getStaffName(task.createdBy).charAt(0)}
                       </div>
                       <span className="text-xs font-semibold">{getStaffName(task.createdBy)}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <div className="h-6 w-6 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-bold">
-                        {getStaffName(task.assignedTo).charAt(0)}
-                      </div>
-                      <span className="text-xs">{getStaffName(task.assignedTo)}</span>
                     </div>
                   </TableCell>
                   <TableCell className="text-right">

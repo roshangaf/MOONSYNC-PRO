@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect } from "react"
@@ -8,7 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { useAuth } from "@/components/auth-context"
 import { MOCK_TASKS, MOCK_USERS } from "@/lib/store"
 import { useToast } from "@/hooks/use-toast"
-import { Clock, Play, Square, UserPlus, CheckCircle, ArrowLeft, UserCheck, Phone, MapPin, User } from "lucide-react"
+import { Clock, Play, Square, UserPlus, CheckCircle, ArrowLeft, UserCheck, Phone, MapPin, User, Calendar } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 export default function TaskDetailPage() {
@@ -86,9 +87,15 @@ export default function TaskDetailPage() {
                 <Badge variant="outline" className="font-bold border-primary text-primary">{task.priority} Priority</Badge>
               </div>
               <CardTitle className="text-3xl font-black tracking-tight text-slate-900">{task.title}</CardTitle>
-              <div className="flex items-center gap-2 mt-2 text-sm font-medium text-slate-500">
-                <UserCheck className="h-4 w-4 text-primary" />
-                <span>Listed by <span className="text-primary font-bold">{getStaffName(task.createdBy)}</span> on {new Date(task.createdAt).toLocaleDateString()}</span>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-4 mt-4">
+                <div className="flex items-center gap-2 text-sm font-medium text-slate-500">
+                  <UserCheck className="h-4 w-4 text-primary" />
+                  <span>Listed by <span className="text-primary font-bold">{getStaffName(task.createdBy)}</span></span>
+                </div>
+                <div className="flex items-center gap-2 text-sm font-medium text-slate-500">
+                  <Calendar className="h-4 w-4 text-primary" />
+                  <span>On <span className="text-slate-900 font-bold">{new Date(task.createdAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</span></span>
+                </div>
               </div>
             </CardHeader>
             <CardContent className="space-y-6 pt-6">
@@ -217,12 +224,12 @@ export default function TaskDetailPage() {
                 <span className="font-mono text-xs font-bold text-primary">{task.id}</span>
               </div>
               <div className="flex justify-between items-center py-2 border-b border-slate-50">
-                <span className="text-muted-foreground font-bold text-[10px] uppercase">Org Dept</span>
-                <span className="font-bold text-xs">IT SERVICES</span>
+                <span className="text-muted-foreground font-bold text-[10px] uppercase">Listing Timestamp</span>
+                <span className="font-mono text-[10px] font-bold">{new Date(task.createdAt).toLocaleTimeString()}</span>
               </div>
               <div className="flex justify-between items-center py-2 border-b border-slate-50">
-                <span className="text-muted-foreground font-bold text-[10px] uppercase">Originator</span>
-                <span className="font-bold text-xs">{getStaffName(task.createdBy)}</span>
+                <span className="text-muted-foreground font-bold text-[10px] uppercase">Org Dept</span>
+                <span className="font-bold text-xs">IT SERVICES</span>
               </div>
               <div className="flex justify-between items-center py-2">
                 <span className="text-muted-foreground font-bold text-[10px] uppercase">Sync Status</span>
