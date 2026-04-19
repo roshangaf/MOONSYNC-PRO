@@ -34,7 +34,7 @@ const QRCode = () => (
     <rect width="80" height="80" fill="white" />
     <path d="M10 10h20v20H10zM10 50h20v20H10zM50 10h20v20H50z" fill="black" />
     <path d="M15 15h10v10H15zM15 55h10v10H15zM55 15h10v10H55z" fill="white" />
-    <path d="M40 10h5v5h-5zM45 15h5v5h-5zM40 20h5v5h-5zM35 25h5v5h-5zM10 35h5v5h-5zM20 35h5v5h-5zM30 35h5v5h-5zM10 45h5v5h-5zM20 45h5v5h-5zM30 45h5v5h-5zM40 40h5v5h-5zM50 40h5v5h-5zM60 40h5v5h-5zM40 50h5v5h-5zM50 50h5v5h-5zM60 50h5v5h-5zM70 50h5v5h-5zM40 60h5v5h-5zM50 60h5v5h-5zM60 60h5v5h-5zM70 60h5v5h-5zM40 70h5v5h-5zM50 70h5v5h-5z" fill="black" />
+    <path d="M40 10h5v5h-5zM45 15h5v5h-5zM40 20h5v5h-5zM35 25h5v5h-5zM10 35h5v5h-5zM20 35h5v5h-5zM30 35h5v5h-5zM10 45h5v5h-5zM20 45h5v5h-5zM30 45h5v5h-5zM40 40h5v5h-5zM50 40h5v5h-5zM60 40h5v5h-5zM40 50h5v5h-5zM50 50h5v5h-5zM60 50h5v5h-5zM70 50h5v5h-5zM40 60h5v5h-5zM50 60h5v5h-5zM60 60h5v5h-5zM70 60h5v5h-5zM40 70h5v5h-5zM50 70h5v5h-5" fill="black" />
   </svg>
 );
 
@@ -100,6 +100,19 @@ export default function BillingPage() {
     toast({
       title: "Bill Voided",
       description: `Document ${id} has been marked as void in the NRS ledger.`,
+      variant: "destructive"
+    });
+  }
+
+  const deleteBill = (id: string) => {
+    const updatedBills = bills.filter(bill => bill.id !== id);
+    saveBillsToStorage(updatedBills);
+    if (selectedBill?.id === id) {
+      setSelectedBill(null);
+    }
+    toast({
+      title: "Bill Deleted",
+      description: `Document ${id} has been permanently removed from the NRS terminal.`,
       variant: "destructive"
     });
   }
@@ -294,12 +307,22 @@ export default function BillingPage() {
                             <Button 
                               variant="ghost" 
                               size="icon" 
-                              className="h-7 w-7 text-destructive hover:bg-destructive/10"
+                              className="h-7 w-7 text-orange-500 hover:bg-orange-50"
                               onClick={(e) => { e.stopPropagation(); voidBill(bill.id); }}
+                              title="Void Bill"
                             >
                               <XCircle className="h-3.5 w-3.5" />
                             </Button>
                           )}
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-7 w-7 text-destructive hover:bg-destructive/10"
+                            onClick={(e) => { e.stopPropagation(); deleteBill(bill.id); }}
+                            title="Delete Bill"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
                         </div>
                       </TableCell>
                     </TableRow>
