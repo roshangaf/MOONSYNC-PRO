@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect } from "react"
@@ -8,7 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { useAuth } from "@/components/auth-context"
 import { MOCK_TASKS, MOCK_USERS } from "@/lib/store"
 import { useToast } from "@/hooks/use-toast"
-import { Clock, Play, Square, UserPlus, CheckCircle, ArrowLeft } from "lucide-react"
+import { Clock, Play, Square, UserPlus, CheckCircle, ArrowLeft, UserCheck } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 export default function TaskDetailPage() {
@@ -21,6 +22,10 @@ export default function TaskDetailPage() {
   const [isLoggingTime, setIsLoggingTime] = useState(false)
   const [timer, setTimer] = useState(0)
   const [assigneeId, setAssigneeId] = useState(task?.assignedTo || "")
+
+  const getStaffName = (id?: string) => {
+    return MOCK_USERS.find(u => u.id === id)?.name || "Unknown Personnel";
+  };
 
   useEffect(() => {
     let interval: any;
@@ -68,35 +73,43 @@ export default function TaskDetailPage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      <Button variant="ghost" onClick={() => router.back()} className="-ml-2">
+      <Button variant="ghost" onClick={() => router.back()} className="-ml-2 hover:bg-primary/5 text-primary font-bold">
         <ArrowLeft className="mr-2 h-4 w-4" />
-        Back to Tasks
+        Back to Task Ledger
       </Button>
 
       <div className="flex flex-col md:flex-row gap-6">
         <div className="flex-1 space-y-6">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between mb-2">
-                <Badge variant={task.status === 'Completed' ? 'secondary' : 'default'}>{task.status}</Badge>
-                <Badge variant="outline">{task.priority} Priority</Badge>
+          <Card className="shadow-lg border-none">
+            <CardHeader className="border-b bg-muted/20">
+              <div className="flex items-center justify-between mb-4">
+                <Badge variant={task.status === 'Completed' ? 'secondary' : 'default'} className="font-bold uppercase tracking-widest">{task.status}</Badge>
+                <Badge variant="outline" className="font-bold border-primary text-primary">{task.priority} Priority</Badge>
               </div>
-              <CardTitle className="text-2xl font-bold">{task.title}</CardTitle>
-              <CardDescription>Created by Mark Marketer on {new Date(task.createdAt).toLocaleDateString()}</CardDescription>
+              <CardTitle className="text-3xl font-black tracking-tight text-slate-900">{task.title}</CardTitle>
+              <div className="flex items-center gap-2 mt-2 text-sm font-medium text-slate-500">
+                <UserCheck className="h-4 w-4 text-primary" />
+                <span>Listed by <span className="text-primary font-bold">{getStaffName(task.createdBy)}</span> on {new Date(task.createdAt).toLocaleDateString()}</span>
+              </div>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-6 pt-6">
               <div className="space-y-2">
-                <h4 className="font-semibold">Description</h4>
-                <p className="text-muted-foreground">{task.description}</p>
+                <h4 className="font-bold text-slate-900 uppercase tracking-tighter">Job Overview</h4>
+                <p className="text-slate-600 leading-relaxed">{task.description}</p>
               </div>
               
-              {/* Dummy expansion if not present */}
               <div className="space-y-2">
-                <h4 className="font-semibold">Detailed Requirements</h4>
-                <div className="p-4 bg-muted/30 rounded-lg text-sm space-y-2">
-                  <p>1. Analyze current infrastructure constraints.</p>
-                  <p>2. Prepare staging environment for validation.</p>
-                  <p>3. Execute primary task flow following IT security protocols.</p>
+                <h4 className="font-bold text-slate-900 uppercase tracking-tighter">Operational Requirements</h4>
+                <div className="p-5 bg-primary/5 rounded-2xl text-sm space-y-3 border border-primary/10">
+                  <p className="flex gap-2">
+                    <span className="font-black text-primary">01.</span> Analyze current infrastructure constraints and dependency map.
+                  </p>
+                  <p className="flex gap-2">
+                    <span className="font-black text-primary">02.</span> Prepare secure staging environment for validation protocols.
+                  </p>
+                  <p className="flex gap-2">
+                    <span className="font-black text-primary">03.</span> Execute primary task flow following IT security handbooks.
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -105,18 +118,18 @@ export default function TaskDetailPage() {
 
         <div className="w-full md:w-80 space-y-6">
           {user?.role === 'Admin' && (
-            <Card className="border-accent">
+            <Card className="border-accent bg-accent/5">
               <CardHeader>
-                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <CardTitle className="text-sm font-bold flex items-center gap-2 uppercase tracking-tighter">
                   <UserPlus className="h-4 w-4 text-accent" />
-                  Management
+                  Terminal Control
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <label className="text-xs font-medium text-muted-foreground">Assign Technician</label>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Assign Technician</label>
                   <Select value={assigneeId} onValueChange={setAssigneeId}>
-                    <SelectTrigger>
+                    <SelectTrigger className="bg-white">
                       <SelectValue placeholder="Select Technician" />
                     </SelectTrigger>
                     <SelectContent>
@@ -126,59 +139,63 @@ export default function TaskDetailPage() {
                     </SelectContent>
                   </Select>
                 </div>
-                <Button className="w-full bg-accent" onClick={handleAssign}>Confirm Assignment</Button>
+                <Button className="w-full bg-accent hover:bg-accent/90 font-bold" onClick={handleAssign}>Initialize Assignment</Button>
               </CardContent>
             </Card>
           )}
 
           {user?.role === 'Technician' && task.assignedTo === user.id && (
-            <Card className="border-primary">
+            <Card className="border-primary bg-primary/5 shadow-xl shadow-primary/10">
               <CardHeader>
-                <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-primary" />
-                  Time Tracker
+                <CardTitle className="text-sm font-bold flex items-center gap-2 uppercase tracking-tighter text-primary">
+                  <Clock className="h-4 w-4" />
+                  Execution Tracker
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="text-3xl font-mono text-center py-4 bg-primary/5 rounded-lg border border-primary/20">
+                <div className="text-4xl font-mono text-center py-6 bg-white rounded-2xl border-2 border-primary/10 text-primary font-black">
                   {formatTime(timer)}
                 </div>
                 <Button 
-                  className={`w-full ${isLoggingTime ? 'bg-destructive hover:bg-destructive/90' : 'bg-primary'}`}
+                  className={`w-full h-12 text-md font-bold shadow-lg ${isLoggingTime ? 'bg-destructive hover:bg-destructive/90 shadow-destructive/20' : 'bg-primary shadow-primary/20'}`}
                   onClick={toggleTimeLogging}
                 >
                   {isLoggingTime ? (
-                    <><Square className="mr-2 h-4 w-4 fill-current" /> Stop Work</>
+                    <><Square className="mr-2 h-4 w-4 fill-current" /> Terminate Session</>
                   ) : (
-                    <><Play className="mr-2 h-4 w-4 fill-current" /> Start Work</>
+                    <><Play className="mr-2 h-4 w-4 fill-current" /> Initialize Session</>
                   )}
                 </Button>
               </CardContent>
               <CardFooter>
-                <Button variant="outline" className="w-full" disabled={isLoggingTime || task.status === 'Completed'}>
+                <Button variant="outline" className="w-full border-primary text-primary font-bold" disabled={isLoggingTime || task.status === 'Completed'}>
                   <CheckCircle className="mr-2 h-4 w-4" />
-                  Mark as Completed
+                  Finalize Job
                 </Button>
               </CardFooter>
             </Card>
           )}
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm font-semibold">Metadata</CardTitle>
+          <Card className="border-none shadow-md">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-xs font-black uppercase tracking-widest text-muted-foreground">Task Metadata</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3 text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">ID:</span>
-                <span className="font-mono">{task.id}</span>
+            <CardContent className="space-y-4 text-sm pt-0">
+              <div className="flex justify-between items-center py-2 border-b border-slate-50">
+                <span className="text-muted-foreground font-bold text-[10px] uppercase">Job ID</span>
+                <span className="font-mono text-xs font-bold text-primary">{task.id}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Department:</span>
-                <span>IT Services</span>
+              <div className="flex justify-between items-center py-2 border-b border-slate-50">
+                <span className="text-muted-foreground font-bold text-[10px] uppercase">Org Dept</span>
+                <span className="font-bold text-xs">IT SERVICES</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Last Updated:</span>
-                <span>Just now</span>
+              <div className="flex justify-between items-center py-2 border-b border-slate-50">
+                <span className="text-muted-foreground font-bold text-[10px] uppercase">Originator</span>
+                <span className="font-bold text-xs">{getStaffName(task.createdBy)}</span>
+              </div>
+              <div className="flex justify-between items-center py-2">
+                <span className="text-muted-foreground font-bold text-[10px] uppercase">Sync Status</span>
+                <span className="text-[10px] text-emerald-500 font-black animate-pulse uppercase tracking-widest">Live</span>
               </div>
             </CardContent>
           </Card>
