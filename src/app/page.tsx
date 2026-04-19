@@ -8,7 +8,6 @@ import {
   BarChart3, 
   Cpu,
   Activity,
-  Zap,
 } from "lucide-react";
 import Image from "next/image";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
@@ -85,14 +84,6 @@ export default function Home() {
               </div>
             </div>
           </div>
-          
-          <div className="pt-12 animate-fade-in delay-500">
-             <div className="inline-flex items-center gap-3 px-6 py-3 rounded-2xl bg-slate-900 text-white font-mono text-sm shadow-2xl">
-               <Zap className="w-4 h-4 text-accent animate-pulse" />
-               <span className="opacity-50">Sync Status:</span>
-               <span className="text-accent">All Systems Nominal</span>
-             </div>
-          </div>
         </div>
       </header>
 
@@ -146,7 +137,7 @@ export default function Home() {
                 </div>
                 <span className="text-2xl font-bold tracking-tight text-slate-900">MoonSync Pro</span>
               </div>
-              <p className="text-lg text-slate-500 max-w-sm leading-relaxed">
+              <p className="text-lg text-slate-500 max-sm:max-w-sm leading-relaxed">
                 Enterprise-grade IT Service Management. Built for teams that demand precision, performance, and synchronization.
               </p>
             </div>
