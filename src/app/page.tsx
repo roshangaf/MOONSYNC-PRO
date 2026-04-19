@@ -1,4 +1,3 @@
-
 "use client"
 
 import { Button } from "@/components/ui/button";
@@ -40,12 +39,12 @@ export default function Home() {
               className="flex flex-col h-full hover:shadow-lg transition-all cursor-pointer border-2 hover:border-primary/50 group bg-card/50 backdrop-blur-sm" 
               onClick={() => login(persona.role as any)}
             >
-              <CardHeader className="space-y-2 flex-1 flex flex-col items-center justify-center p-6">
+              <CardHeader className="space-y-2 flex-1 flex flex-col items-center justify-center p-6 text-center">
                 <div className="p-3 rounded-full bg-primary/5 group-hover:bg-primary/10 transition-colors mb-2">
                   <persona.icon className="w-10 h-10 text-primary group-hover:scale-110 transition-transform" />
                 </div>
                 <CardTitle className="text-2xl font-bold">{persona.role}</CardTitle>
-                <CardDescription className="text-sm text-center leading-relaxed px-2">
+                <CardDescription className="text-sm leading-relaxed px-2">
                   {persona.desc}
                 </CardDescription>
               </CardHeader>
@@ -59,7 +58,7 @@ export default function Home() {
         </div>
 
         <p className="text-xs text-muted-foreground pt-8 uppercase tracking-widest font-medium opacity-50">
-          Powered by Next-Gen ERP Infrastructure
+          ROSHAN TAMANG
         </p>
       </div>
     </div>
