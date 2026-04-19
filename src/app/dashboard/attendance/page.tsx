@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect } from "react"
@@ -100,9 +101,10 @@ export default function AttendancePage() {
 
     setIsSyncing(true);
     setTimeout(() => {
+      // Sync logic improved to use current user context if admin is syncing for self or general testing
       const hardwareRecord: AttendanceRecord = {
         id: `hw-${Math.random().toString(36).substr(2, 5)}`,
-        userId: '4', // Tina Tech
+        userId: user?.role === 'Admin' ? '4' : (user?.id || '4'), // Defaults to Tina if unknown
         date: new Date().toISOString().split('T')[0],
         checkIn: '08:45 AM',
         status: 'Present',
@@ -113,7 +115,7 @@ export default function AttendancePage() {
       setIsSyncing(false);
       toast({
         title: "Data Synced",
-        description: "Successfully imported 1 hardware log from Bio-Matrix v8.",
+        description: "Successfully imported hardware logs from Bio-Matrix v8.",
       });
     }, 2000);
   };
