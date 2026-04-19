@@ -1,4 +1,4 @@
-import { User, Task, Role, Department } from './types';
+import { User, Task, Role, Department, AttendanceRecord } from './types';
 
 export const MOCK_USERS: User[] = [
   { id: '1', name: 'Alice Admin', email: 'alice@performaflow.com', role: 'Admin', department: 'Administration' },
@@ -32,4 +32,24 @@ export const MOCK_TASKS: Task[] = [
     updatedAt: new Date().toISOString(),
     timeLogs: [],
   },
+];
+
+export const MOCK_ATTENDANCE: AttendanceRecord[] = [
+  {
+    id: 'a1',
+    userId: '1',
+    date: new Date().toISOString().split('T')[0],
+    checkIn: '09:00 AM',
+    checkOut: '05:00 PM',
+    status: 'Present',
+    location: 'Office HQ'
+  },
+  {
+    id: 'a2',
+    userId: '3',
+    date: new Date().toISOString().split('T')[0],
+    checkIn: '09:15 AM',
+    status: 'Late',
+    location: 'Remote'
+  }
 ];

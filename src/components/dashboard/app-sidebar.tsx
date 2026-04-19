@@ -12,7 +12,8 @@ import {
   Wallet,
   Wrench,
   CheckCircle2,
-  PlusCircle
+  PlusCircle,
+  CalendarCheck
 } from "lucide-react"
 
 import {
@@ -41,6 +42,12 @@ export function AppSidebar() {
       title: "Dashboard",
       url: "/dashboard",
       icon: LayoutDashboard,
+      roles: ["Admin", "Marketing", "Technician", "Finance"],
+    },
+    {
+      title: "Attendance",
+      url: "/dashboard/attendance",
+      icon: CalendarCheck,
       roles: ["Admin", "Marketing", "Technician", "Finance"],
     },
     {

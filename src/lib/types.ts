@@ -37,6 +37,16 @@ export interface TimeLog {
   duration?: number; // In minutes
 }
 
+export interface AttendanceRecord {
+  id: string;
+  userId: string;
+  date: string;
+  checkIn: string;
+  checkOut?: string;
+  status: 'Present' | 'Late' | 'Absent';
+  location?: string;
+}
+
 export interface PerformanceStats {
   userId: string;
   tasksCompleted: number;
