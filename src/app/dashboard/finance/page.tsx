@@ -5,7 +5,7 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Wallet, TrendingUp, ArrowUpRight, ArrowDownRight, FileText, Download, Edit2, ShieldCheck, History, XCircle } from "lucide-react"
+import { Wallet, TrendingUp, ArrowUpRight, ArrowDownRight, FileText, Download, Edit2, ShieldCheck, History, XCircle, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Bill } from "@/lib/types"
 import { useToast } from "@/hooks/use-toast"
@@ -52,10 +52,30 @@ export default function FinancePage() {
     });
   }
 
+  const deleteSyncedBill = (id: string) => {
+    const updated = bills.filter(b => b.id !== id);
+    setBills(updated);
+    localStorage.setItem('moonsync_bills', JSON.stringify(updated));
+    toast({
+      title: "E-Bill Purged",
+      description: `Document ${id} permanently removed from NRS infrastructure.`,
+      variant: "destructive"
+    });
+  };
+
+  const deleteLegacyTransaction = (id: string) => {
+    setLegacyTransactions(prev => prev.filter(tx => tx.id !== id));
+    toast({
+      title: "Record Deleted",
+      description: `Legacy transaction ${id} has been deleted.`,
+      variant: "destructive"
+    });
+  };
+
   const activeBills = bills.filter(b => b.status !== 'Void');
   const activeLegacy = legacyTransactions.filter(tx => tx.status !== 'Void');
 
-  const totalRevenue = activeBills.reduce((sum, bill) => sum + bill.totalAmount, 0) + 
+  const totalRevenue = activeBills.reduce((sum, bill) => sum + (bill.totalAmount || 0), 0) + 
                        activeLegacy.reduce((sum, tx) => sum + tx.amount, 0);
 
   const outstandingValue = activeLegacy
@@ -127,7 +147,9 @@ export default function FinancePage() {
             <CardTitle className="text-lg font-black uppercase tracking-widest">Transaction Synchronization Ledger</CardTitle>
             <CardDescription className="text-xs font-medium">Monitoring encrypted E-Bills and legacy financial data in real-time.</CardDescription>
           </div>
-          <History className="h-6 w-6 text-primary opacity-20" />
+          <div className="flex items-center gap-2">
+             <History className="h-6 w-6 text-primary opacity-20" />
+          </div>
         </CardHeader>
         <CardContent className="p-0">
           <Table>
@@ -137,7 +159,8 @@ export default function FinancePage() {
                 <TableHead className="font-black text-[10px] uppercase tracking-widest py-5">Entity / Client</TableHead>
                 <TableHead className="font-black text-[10px] uppercase tracking-widest py-5">Verification / Category</TableHead>
                 <TableHead className="font-black text-[10px] uppercase tracking-widest py-5">Total Value (NRS)</TableHead>
-                <TableHead className="font-black text-[10px] uppercase tracking-widest py-5 text-right">Ledger Status</TableHead>
+                <TableHead className="font-black text-[10px] uppercase tracking-widest py-5">Ledger Status</TableHead>
+                <TableHead className="font-black text-[10px] uppercase tracking-widest py-5 text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -162,7 +185,7 @@ export default function FinancePage() {
                   <TableCell className={`font-mono font-black text-sm ${bill.status === 'Void' ? 'line-through text-muted-foreground' : 'text-emerald-700'}`}>
                     NRS {bill.totalAmount.toLocaleString()}
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" className="h-fit p-0 group">
@@ -183,6 +206,16 @@ export default function FinancePage() {
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
+                  <TableCell className="text-right">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                      onClick={() => deleteSyncedBill(bill.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
                 </TableRow>
               ))}
               
@@ -202,7 +235,7 @@ export default function FinancePage() {
                   <TableCell className={`font-mono font-black text-sm ${tx.status === 'Void' ? 'line-through text-muted-foreground' : ''}`}>
                     NRS {tx.amount.toLocaleString()}.00
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" className="h-fit p-0 group">
@@ -229,6 +262,16 @@ export default function FinancePage() {
                         <DropdownMenuItem onClick={() => updateStatus(tx.id, 'Void')} className="text-xs font-bold text-destructive">VOID TRANSACTION</DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                      onClick={() => deleteLegacyTransaction(tx.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}
