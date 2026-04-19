@@ -1,3 +1,4 @@
+
 "use client"
 
 import { Button } from "@/components/ui/button";
@@ -64,7 +65,7 @@ export default function Home() {
         <div className="max-w-4xl mx-auto text-center space-y-12">
           <div className="space-y-8 animate-fade-in">
             <div className="inline-flex items-center px-5 py-2 rounded-full bg-white border border-slate-200 shadow-sm text-primary text-xs font-bold uppercase tracking-widest">
-              MOONSYNC PRO by JAGEER
+              MOON SYNC PRO BY ROSHAN
             </div>
             <h1 className="text-6xl md:text-8xl font-black tracking-tighter leading-[0.85] text-slate-900">
               The Engine of <br />
