@@ -4,7 +4,7 @@ import { AuthProvider } from '@/components/auth-context';
 import { Toaster } from '@/components/ui/toaster';
 
 export const metadata: Metadata = {
-  title: 'PerformaFlow | IT Service ERP',
+  title: 'MoonSync Pro | IT Service ERP',
   description: 'Performance management and task tracking for IT services.',
 };
 

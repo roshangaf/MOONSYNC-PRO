@@ -81,7 +81,7 @@ export function AppSidebar() {
             <LayoutDashboard className="size-5" />
           </div>
           <div className="flex flex-col gap-0.5 leading-none group-data-[collapsible=icon]:hidden">
-            <span className="font-semibold text-primary">PerformaFlow</span>
+            <span className="font-semibold text-primary">MoonSync Pro</span>
             <span className="text-xs text-muted-foreground">{user.department}</span>
           </div>
         </div>

@@ -17,7 +17,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
   }, [user, isLoading]);
 
-  if (isLoading || !user) return <div className="h-screen w-screen flex items-center justify-center">Loading PerformaFlow...</div>;
+  if (isLoading || !user) return <div className="h-screen w-screen flex items-center justify-center">Loading MoonSync Pro...</div>;
 
   return (
     <SidebarProvider>
@@ -30,7 +30,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem className="hidden md:block">
-                  <BreadcrumbLink href="/dashboard">PerformaFlow</BreadcrumbLink>
+                  <BreadcrumbLink href="/dashboard">MoonSync Pro</BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator className="hidden md:block" />
                 <BreadcrumbItem>

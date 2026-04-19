@@ -28,7 +28,7 @@ export default function UsersPage() {
       <Card>
         <CardHeader>
           <CardTitle>Organization Directory</CardTitle>
-          <CardDescription>A total of {users.length} active personnel in PerformaFlow.</CardDescription>
+          <CardDescription>A total of {users.length} active personnel in MoonSync Pro.</CardDescription>
         </CardHeader>
         <CardContent className="p-0">
           <Table>

@@ -24,7 +24,7 @@ export default function Home() {
               <LayoutDashboard className="w-12 h-12 text-primary-foreground" />
             </div>
           </div>
-          <h1 className="text-4xl font-bold tracking-tight text-primary">PerformaFlow</h1>
+          <h1 className="text-4xl font-bold tracking-tight text-primary">MoonSync Pro</h1>
           <p className="text-muted-foreground text-lg">Next-generation IT Service ERP & Performance Management</p>
         </div>
 
