@@ -5,19 +5,27 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Wallet, TrendingUp, ArrowUpRight, ArrowDownRight, FileText, Download } from "lucide-react"
+import { Wallet, TrendingUp, ArrowUpRight, ArrowDownRight, FileText, Download, Edit2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Bill } from "@/lib/types"
+import { useToast } from "@/hooks/use-toast"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 export default function FinancePage() {
+  const { toast } = useToast()
   const [bills, setBills] = useState<Bill[]>([])
-
-  // Mock static transactions for combined view
-  const staticTransactions = [
+  const [legacyTransactions, setLegacyTransactions] = useState([
     { id: 'tx-001', client: 'Alpha Corp', service: 'Cloud Migration', amount: 4500, status: 'Paid', date: '2024-03-01' },
     { id: 'tx-002', client: 'Beta Systems', service: 'Security Audit', amount: 2200, status: 'Pending', date: '2024-03-05' },
     { id: 'tx-003', client: 'Gamma Tech', service: 'Hardware Sync', amount: 1800, status: 'Overdue', date: '2024-02-15' },
-  ];
+  ]);
 
   useEffect(() => {
     const savedBills = localStorage.getItem('moonsync_bills');
@@ -26,10 +34,18 @@ export default function FinancePage() {
     }
   }, []);
 
-  const totalRevenue = bills.reduce((sum, bill) => sum + bill.totalAmount, 0) + 
-                       staticTransactions.reduce((sum, tx) => sum + tx.amount, 0);
+  const updateStatus = (id: string, newStatus: string) => {
+    setLegacyTransactions(prev => prev.map(tx => tx.id === id ? { ...tx, status: newStatus } : tx));
+    toast({
+      title: "Ledger Updated",
+      description: `Transaction ${id} is now marked as ${newStatus}.`,
+    });
+  };
 
-  const outstandingValue = staticTransactions
+  const totalRevenue = bills.reduce((sum, bill) => sum + bill.totalAmount, 0) + 
+                       legacyTransactions.reduce((sum, tx) => sum + tx.amount, 0);
+
+  const outstandingValue = legacyTransactions
     .filter(tx => tx.status !== 'Paid')
     .reduce((sum, tx) => sum + tx.amount, 0);
 
@@ -79,7 +95,7 @@ export default function FinancePage() {
             <FileText className="h-4 w-4 text-orange-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{staticTransactions.filter(tx => tx.status !== 'Paid').length}</div>
+            <div className="text-2xl font-bold">{legacyTransactions.filter(tx => tx.status !== 'Paid').length}</div>
             <div className="flex items-center text-xs text-orange-500 font-bold mt-1">
               <ArrowDownRight className="h-3 w-3 mr-1" /> NRS {outstandingValue.toLocaleString()}.00 Receivable
             </div>
@@ -96,11 +112,11 @@ export default function FinancePage() {
           <Table>
             <TableHeader className="bg-muted/10">
               <TableRow>
-                <TableHead className="font-bold text-xs">ID / Date</TableHead>
-                <TableHead className="font-bold text-xs">Client / Account</TableHead>
-                <TableHead className="font-bold text-xs">Type / Service</TableHead>
-                <TableHead className="font-bold text-xs">Transaction Value</TableHead>
-                <TableHead className="font-bold text-xs">System Status</TableHead>
+                <TableHead className="font-bold text-xs uppercase">ID / Date</TableHead>
+                <TableHead className="font-bold text-xs uppercase">Client / Account</TableHead>
+                <TableHead className="font-bold text-xs uppercase">Type / Service</TableHead>
+                <TableHead className="font-bold text-xs uppercase">Transaction Value</TableHead>
+                <TableHead className="font-bold text-xs uppercase">System Status</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -125,7 +141,7 @@ export default function FinancePage() {
               ))}
               
               {/* Static Legacy Transactions */}
-              {staticTransactions.map((tx) => (
+              {legacyTransactions.map((tx) => (
                 <TableRow key={tx.id} className="hover:bg-primary/5 transition-colors">
                   <TableCell>
                     <div className="flex flex-col">
@@ -139,9 +155,26 @@ export default function FinancePage() {
                   </TableCell>
                   <TableCell className="font-mono font-bold">NRS {tx.amount.toLocaleString()}.00</TableCell>
                   <TableCell>
-                    <Badge variant={tx.status === 'Paid' ? 'secondary' : tx.status === 'Pending' ? 'default' : 'destructive'} className="text-[10px]">
-                      {tx.status}
-                    </Badge>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-fit p-0 hover:bg-transparent group">
+                          <Badge 
+                            variant={tx.status === 'Paid' ? 'secondary' : tx.status === 'Pending' ? 'default' : 'destructive'} 
+                            className="text-[10px] cursor-pointer hover:ring-2 hover:ring-primary/20 transition-all flex items-center gap-1"
+                          >
+                            {tx.status}
+                            <Edit2 className="h-2 w-2 opacity-0 group-hover:opacity-100 transition-opacity" />
+                          </Badge>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel className="text-[10px] uppercase font-black tracking-widest">Adjust Ledger Status</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => updateStatus(tx.id, 'Paid')} className="text-xs font-bold">Mark as Paid</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => updateStatus(tx.id, 'Pending')} className="text-xs font-bold">Mark as Pending</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => updateStatus(tx.id, 'Overdue')} className="text-xs font-bold text-destructive">Mark as Overdue</DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </TableCell>
                 </TableRow>
               ))}
