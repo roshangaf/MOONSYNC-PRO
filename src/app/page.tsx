@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useRef } from "react";
@@ -57,7 +56,7 @@ export default function Home() {
   ];
 
   const getImageUrl = (id: string) => {
-    return PlaceHolderImages.find(img => img.id === id)?.imageUrl || `https://picsum.photos/seed/${id}/600/400`;
+    return PlaceHolderImages.find(img => img.id === id)?.imageUrl || `https://picsum.photos/seed/${id}/1200/800`;
   };
 
   const getImageHint = (id: string) => {
@@ -89,7 +88,7 @@ export default function Home() {
         <div className="max-w-6xl mx-auto text-center space-y-8 animate-fade-in">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/5 border border-primary/10 text-primary text-sm font-semibold mb-4">
             <Sparkles className="w-4 h-4" />
-            Next-Gen IT Service Management
+            MOONSYNC PRO by JAGEER
           </div>
           <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight text-slate-900 leading-[1.1]">
             Synchronize Your <span className="text-primary">Enterprise</span> <br />
@@ -190,7 +189,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Portal Access Section (Direct Persona Selection) */}
+      {/* Portal Access Section */}
       <section ref={loginSectionRef} className="py-24 px-6 relative overflow-hidden bg-primary/5">
         <div className="max-w-6xl mx-auto relative z-10">
           <div className="space-y-12 animate-in fade-in duration-1000">
