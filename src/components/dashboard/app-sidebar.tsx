@@ -13,7 +13,8 @@ import {
   Wrench,
   CheckCircle2,
   PlusCircle,
-  CalendarCheck
+  CalendarCheck,
+  Receipt
 } from "lucide-react"
 
 import {
@@ -57,6 +58,12 @@ export function AppSidebar() {
       roles: ["Admin", "Marketing", "Technician", "Finance"],
     },
     {
+      title: "Billing",
+      url: "/dashboard/billing",
+      icon: Receipt,
+      roles: ["Admin", "Finance"],
+    },
+    {
       title: "Staff Management",
       url: "/dashboard/users",
       icon: Users,
@@ -66,7 +73,7 @@ export function AppSidebar() {
       title: "Performance",
       url: "/dashboard/performance",
       icon: ShieldCheck,
-      roles: ["Admin", "Finance"],
+      roles: ["Admin"],
     },
     {
       title: "Accounting",

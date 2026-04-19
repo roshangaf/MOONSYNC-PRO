@@ -52,6 +52,25 @@ export interface AttendanceRecord {
   source?: 'Manual' | 'Hardware' | 'Mobile';
 }
 
+export type BillType = 'VAT' | 'Estimate';
+
+export interface BillItem {
+  id: string;
+  particular: string;
+  amount: number;
+}
+
+export interface Bill {
+  id: string;
+  type: BillType;
+  clientName: string;
+  address?: string;
+  items: BillItem[];
+  totalAmount: number;
+  createdAt: string;
+  currency: 'NRS';
+}
+
 export interface PerformanceStats {
   userId: string;
   tasksCompleted: number;
