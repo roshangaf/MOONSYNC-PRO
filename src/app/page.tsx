@@ -28,11 +28,6 @@ import { PlaceHolderImages } from "@/lib/placeholder-images";
 
 export default function Home() {
   const { login } = useAuth();
-  const [isCompanyAuthenticated, setIsCompanyAuthenticated] = useState(false);
-  const [isAuthenticating, setIsAuthenticating] = useState(false);
-  const [companyId, setCompanyId] = useState("");
-  const [accessCode, setAccessCode] = useState("");
-  
   const loginSectionRef = useRef<HTMLDivElement>(null);
 
   const scrollToLogin = () => {
@@ -51,23 +46,22 @@ export default function Home() {
       title: "AI Task Architect",
       desc: "Transform vague client requests into detailed technical specifications using advanced Gemini-powered logic.",
       icon: Cpu,
-      image: PlaceHolderImages.find(img => img.id === 'feature-ai')?.imageUrl
+      imageId: 'feature-ai'
     },
     {
       title: "Real-time Analytics",
       desc: "Monitor departmental KPIs and staff performance with dynamic charts and efficiency scoring.",
       icon: BarChart3,
-      image: PlaceHolderImages.find(img => img.id === 'feature-stats')?.imageUrl
+      imageId: 'feature-stats'
     }
   ];
 
-  const handleCompanyLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsAuthenticating(true);
-    setTimeout(() => {
-      setIsCompanyAuthenticated(true);
-      setIsAuthenticating(false);
-    }, 1500);
+  const getImageUrl = (id: string) => {
+    return PlaceHolderImages.find(img => img.id === id)?.imageUrl || `https://picsum.photos/seed/${id}/600/400`;
+  };
+
+  const getImageHint = (id: string) => {
+    return PlaceHolderImages.find(img => img.id === id)?.imageHint || "technology";
   };
 
   return (
@@ -118,13 +112,13 @@ export default function Home() {
           <div className="relative pt-16 max-w-5xl mx-auto">
             <div className="rounded-2xl overflow-hidden border-4 border-white shadow-[0_32px_64px_-12px_rgba(0,0,0,0.14)] relative">
                <Image 
-                src={PlaceHolderImages.find(img => img.id === 'hero-dashboard')?.imageUrl || ""} 
+                src={getImageUrl('hero-dashboard')} 
                 alt="MoonSync Dashboard" 
                 width={1200} 
                 height={800}
                 className="w-full object-cover"
                 priority
-                data-ai-hint="dashboard software"
+                data-ai-hint={getImageHint('hero-dashboard')}
               />
             </div>
             {/* Floating Stats Card Placeholder */}
@@ -165,12 +159,12 @@ export default function Home() {
                 </p>
                 <div className="rounded-2xl overflow-hidden border border-border/30">
                   <Image 
-                    src={feature.image || ""} 
+                    src={getImageUrl(feature.imageId)} 
                     alt={feature.title} 
                     width={600} 
                     height={400}
                     className="w-full object-cover aspect-video"
-                    data-ai-hint={i === 0 ? "artificial intelligence" : "data charts"}
+                    data-ai-hint={getImageHint(feature.imageId)}
                   />
                 </div>
               </div>
@@ -196,121 +190,51 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Login Portal Section */}
+      {/* Portal Access Section (Direct Persona Selection) */}
       <section ref={loginSectionRef} className="py-24 px-6 relative overflow-hidden bg-primary/5">
-        <div className="max-w-5xl mx-auto relative z-10">
-          {!isCompanyAuthenticated ? (
-            <div className="max-w-md mx-auto animate-in fade-in slide-in-from-bottom-10 duration-700 space-y-12">
-              <div className="text-center space-y-4">
-                <h2 className="text-4xl font-extrabold text-primary">Gateway Access</h2>
-                <p className="text-muted-foreground">Authenticate your organizational domain to unlock the MoonSync infrastructure.</p>
+        <div className="max-w-6xl mx-auto relative z-10">
+          <div className="space-y-12 animate-in fade-in duration-1000">
+            <div className="text-center space-y-4">
+              <div className="flex justify-center">
+                <div className="p-5 bg-primary rounded-3xl shadow-2xl animate-pulse ring-8 ring-primary/5">
+                  <ShieldCheck className="w-16 h-16 text-white" />
+                </div>
               </div>
+              <h2 className="text-5xl font-extrabold text-slate-900 pt-4">Direct Terminal Access</h2>
+              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+                Select your departmental persona to initialize your specialized terminal workspace.
+              </p>
+            </div>
 
-              <Card className="border-none shadow-[0_24px_48px_-12px_rgba(0,0,0,0.1)] bg-white/90 backdrop-blur-sm overflow-hidden rounded-3xl">
-                <div className="h-2 bg-primary w-full" />
-                <CardHeader className="pt-10">
-                  <CardTitle className="flex items-center gap-3 justify-center text-xl">
-                    <Lock className="w-5 h-5 text-accent" />
-                    Secure Initialization
-                  </CardTitle>
-                </CardHeader>
-                <form onSubmit={handleCompanyLogin}>
-                  <CardContent className="space-y-6 px-8">
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold uppercase tracking-[0.15em] text-muted-foreground">Domain Identifier</label>
-                      <Input 
-                        placeholder="e.g. MOON-CORP-SECURE" 
-                        className="h-12 bg-white/50 border-border/50 text-lg rounded-xl"
-                        value={companyId}
-                        onChange={(e) => setCompanyId(e.target.value)}
-                        required
-                      />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+              {personas.map((persona, idx) => (
+                <Card 
+                  key={persona.role} 
+                  className={cn(
+                    "flex flex-col h-full hover:shadow-2xl transition-all cursor-pointer border-2 hover:border-primary group bg-white/80 backdrop-blur-md rounded-3xl overflow-hidden",
+                    "animate-in slide-in-from-bottom-12 duration-700 fill-mode-both"
+                  )}
+                  style={{ animationDelay: `${idx * 150}ms` }}
+                  onClick={() => login(persona.role as any)}
+                >
+                  <CardHeader className="space-y-4 flex-1 flex flex-col items-center justify-center p-8 text-center">
+                    <div className="p-4 rounded-2xl bg-primary/5 group-hover:bg-primary group-hover:text-white transition-all duration-300 mb-2">
+                      <persona.icon className="w-12 h-12 text-primary group-hover:scale-110 transition-transform" />
                     </div>
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold uppercase tracking-[0.15em] text-muted-foreground">Security Token</label>
-                      <Input 
-                        type="password" 
-                        placeholder="••••••••" 
-                        className="h-12 bg-white/50 border-border/50 text-lg rounded-xl"
-                        value={accessCode}
-                        onChange={(e) => setAccessCode(e.target.value)}
-                        required
-                      />
-                    </div>
-                  </CardContent>
-                  <CardFooter className="pb-10 px-8">
-                    <Button 
-                      className="w-full h-14 text-xl font-bold rounded-2xl group relative overflow-hidden transition-all active:scale-[0.98]" 
-                      disabled={isAuthenticating}
-                    >
-                      {isAuthenticating ? (
-                        <Loader2 className="w-6 h-6 animate-spin" />
-                      ) : (
-                        <>
-                          Sync Infrastructure
-                          <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                        </>
-                      )}
+                    <CardTitle className="text-2xl font-bold text-slate-900">{persona.role}</CardTitle>
+                    <CardDescription className="text-base leading-relaxed">
+                      {persona.desc}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardFooter className="p-8 pt-0 mt-auto">
+                    <Button variant="outline" className="w-full h-12 font-bold rounded-xl group-hover:bg-primary group-hover:text-white group-hover:border-primary transition-all duration-300">
+                      Access Hub
                     </Button>
                   </CardFooter>
-                </form>
-              </Card>
+                </Card>
+              ))}
             </div>
-          ) : (
-            <div className="space-y-12 animate-in fade-in zoom-in-95 duration-1000">
-              <div className="text-center space-y-4">
-                <div className="flex justify-center">
-                  <div className="p-5 bg-primary rounded-3xl shadow-2xl animate-pulse ring-8 ring-primary/5">
-                    <ShieldCheck className="w-16 h-16 text-white" />
-                  </div>
-                </div>
-                <h2 className="text-5xl font-extrabold text-slate-900 pt-4">Workspace Selection</h2>
-                <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-                  Access granted for <span className="text-primary font-bold">{companyId || "MoonSync Enterprise"}</span>. <br />
-                  Select your departmental persona to initialize your specialized terminal.
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-                {personas.map((persona, idx) => (
-                  <Card 
-                    key={persona.role} 
-                    className={cn(
-                      "flex flex-col h-full hover:shadow-2xl transition-all cursor-pointer border-2 hover:border-primary group bg-white/80 backdrop-blur-md rounded-3xl overflow-hidden",
-                      "animate-in slide-in-from-bottom-12 duration-700 fill-mode-both"
-                    )}
-                    style={{ animationDelay: `${idx * 150}ms` }}
-                    onClick={() => login(persona.role as any)}
-                  >
-                    <CardHeader className="space-y-4 flex-1 flex flex-col items-center justify-center p-8 text-center">
-                      <div className="p-4 rounded-2xl bg-primary/5 group-hover:bg-primary group-hover:text-white transition-all duration-300 mb-2">
-                        <persona.icon className="w-12 h-12 text-primary group-hover:scale-110 transition-transform" />
-                      </div>
-                      <CardTitle className="text-2xl font-bold text-slate-900">{persona.role}</CardTitle>
-                      <CardDescription className="text-base leading-relaxed line-clamp-3">
-                        {persona.desc}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardFooter className="p-8 pt-0 mt-auto">
-                      <Button variant="outline" className="w-full h-12 font-bold rounded-xl group-hover:bg-primary group-hover:text-white group-hover:border-primary transition-all duration-300">
-                        Access Hub
-                      </Button>
-                    </CardFooter>
-                  </Card>
-                ))}
-              </div>
-
-              <div className="text-center">
-                <Button 
-                  variant="link" 
-                  className="text-muted-foreground hover:text-primary transition-colors text-lg"
-                  onClick={() => setIsCompanyAuthenticated(false)}
-                >
-                  Disconnect from {companyId || "System"}
-                </Button>
-              </div>
-            </div>
-          )}
+          </div>
         </div>
       </section>
 
