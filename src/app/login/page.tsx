@@ -22,11 +22,11 @@ export default function CompanyLoginPage() {
 
   const handleCompanyVerify = (e: React.FormEvent) => {
     e.preventDefault()
-    // Simulated company domain verification
-    if (!domain.toLowerCase().includes("moonsync.pro")) {
+    // Simulated company verification
+    if (!domain.toLowerCase().includes("moonsync")) {
       toast({
-        title: "Unauthorized Domain",
-        description: "Please use your registered organizational domain (e.g. corp.moonsync.pro).",
+        title: "Invalid Company",
+        description: "Please enter your registered company name (e.g. MoonSync Pro).",
         variant: "destructive"
       })
       return
@@ -74,10 +74,10 @@ export default function CompanyLoginPage() {
                 <div className="space-y-2">
                   <label className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
                     <ShieldCheck className="w-3 h-3" />
-                    Domain Identifier
+                    Company Name
                   </label>
                   <Input 
-                    placeholder="corp.moonsync.pro" 
+                    placeholder="MoonSync Pro" 
                     className="h-12 bg-white/50 border-slate-200 focus:ring-primary/20 rounded-xl"
                     value={domain}
                     onChange={(e) => setDomain(e.target.value)}
