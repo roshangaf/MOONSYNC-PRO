@@ -37,6 +37,7 @@ export default function AttendancePage() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [isPinging, setIsPinging] = useState(false);
   const [terminalStatus, setTerminalStatus] = useState<'Online' | 'Offline'>('Online');
+  const [autoLocation, setAutoLocation] = useState<string>("Detecting Location...");
 
   const isManagement = user?.role === 'Admin' || user?.role === 'Finance';
 
@@ -45,6 +46,22 @@ export default function AttendancePage() {
       const now = new Date();
       setCurrentTime(now.toLocaleTimeString());
     }, 1000);
+
+    // Automatically detect location
+    if (typeof window !== 'undefined' && "geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          setAutoLocation(`Lat: ${latitude.toFixed(4)}, Lon: ${longitude.toFixed(4)}`);
+        },
+        () => {
+          setAutoLocation("Location Access Denied");
+        }
+      );
+    } else {
+      setAutoLocation("Geo-Location Unavailable");
+    }
+
     return () => clearInterval(timer);
   }, []);
 
@@ -59,14 +76,14 @@ export default function AttendancePage() {
         date,
         checkIn: time,
         status: 'Present',
-        location: 'HQ Terminal-A1',
+        location: autoLocation,
         source: 'Manual'
       };
       setRecords([newRecord, ...records]);
       setIsCheckedIn(true);
       toast({
         title: "Check-in Logged",
-        description: `Session initialized via local terminal at ${time}`,
+        description: `Session initialized at ${time}. Location captured: ${autoLocation}`,
       });
     } else {
       setIsCheckedIn(false);
@@ -111,7 +128,7 @@ export default function AttendancePage() {
         date: new Date().toISOString().split('T')[0],
         checkIn: '08:45 AM',
         status: 'Present',
-        location: 'Bio-Matrix v8',
+        location: 'Bio-Matrix v8 (HQ)',
         source: 'Hardware'
       };
       setRecords(prev => [hardwareRecord, ...prev]);
@@ -153,10 +170,12 @@ export default function AttendancePage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Button variant="outline" onClick={generateReport} className="hidden sm:flex border-primary text-primary hover:bg-primary/5">
-            <Download className="mr-2 h-4 w-4" />
-            {isManagement ? "Export Daily Audit" : "Download My Logs"}
-          </Button>
+          {(isManagement) && (
+            <Button variant="outline" onClick={generateReport} className="hidden sm:flex border-primary text-primary hover:bg-primary/5">
+              <Download className="mr-2 h-4 w-4" />
+              Export Daily Audit
+            </Button>
+          )}
           <Card className="flex items-center gap-4 px-6 py-3 border-primary/20 bg-primary/5">
             <Clock className="h-5 w-5 text-primary animate-pulse" />
             <div className="text-xl font-mono font-bold text-primary">{currentTime || "Loading..."}</div>
@@ -172,6 +191,10 @@ export default function AttendancePage() {
               <CardDescription>Direct terminal clock-in.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div className="p-3 bg-slate-50 rounded-lg border text-xs flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-primary" />
+                <span className="font-semibold text-slate-600 truncate">{autoLocation}</span>
+              </div>
               <div className="flex flex-col gap-3">
                 {!isCheckedIn ? (
                   <Button 
@@ -330,7 +353,7 @@ export default function AttendancePage() {
                         ) : (
                           <MapPin className="h-3 w-3 text-primary" />
                         )}
-                        <span className="text-[10px] font-semibold">{record.location || 'Terminal-A1'}</span>
+                        <span className="text-[10px] font-semibold truncate max-w-[150px]">{record.location || 'Terminal-A1'}</span>
                       </div>
                     </TableCell>
                   </TableRow>
