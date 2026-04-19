@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState } from "react";
@@ -116,10 +115,6 @@ export default function Home() {
                 </div>
               </div>
               <div className="space-y-2">
-                <div className="flex items-center justify-center gap-2 text-green-500 font-bold text-sm uppercase tracking-widest mb-2">
-                  <Sparkles className="w-4 h-4" />
-                  Secure Link Established
-                </div>
                 <h1 className="text-5xl font-extrabold tracking-tight text-primary">Secure Access Portal</h1>
                 <p className="text-muted-foreground text-xl max-w-2xl mx-auto">
                   Credentials verified. Select your departmental role to proceed to the command center.
