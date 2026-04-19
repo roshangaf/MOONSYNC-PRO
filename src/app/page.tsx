@@ -66,7 +66,7 @@ export default function Home() {
             <span className="text-2xl font-bold tracking-tight text-primary">MoonSync Pro</span>
           </div>
           <div className="hidden md:flex items-center gap-8 text-sm font-semibold text-slate-600">
-            <a href="#" className="hover:text-primary transition-colors">Features</a>
+            <a href="#features" className="hover:text-primary transition-colors">Features</a>
             <a href="#" className="hover:text-primary transition-colors">Network</a>
             <a href="#" className="hover:text-primary transition-colors">Security</a>
           </div>
@@ -77,20 +77,20 @@ export default function Home() {
       </nav>
 
       {/* Hero Section */}
-      <header className="pt-48 pb-32 px-6">
-        <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 items-center">
+      <header className="pt-56 pb-32 px-6">
+        <div className="max-w-5xl mx-auto flex flex-col items-center text-center space-y-12">
           <div className="space-y-8 animate-fade-in">
-            <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-white border border-slate-200 shadow-sm text-primary text-xs font-bold uppercase tracking-widest">
+            <div className="inline-flex items-center px-5 py-2 rounded-full bg-white border border-slate-200 shadow-sm text-primary text-xs font-bold uppercase tracking-widest">
               MOONSYNC PRO by JAGEER
             </div>
-            <h1 className="text-6xl md:text-8xl font-black tracking-tighter leading-[0.9] text-slate-900">
+            <h1 className="text-6xl md:text-9xl font-black tracking-tighter leading-[0.85] text-slate-900">
               The Engine of <br />
               <span className="text-primary italic">Precision</span> IT.
             </h1>
-            <p className="text-xl text-slate-600 max-w-xl leading-relaxed font-medium">
+            <p className="text-xl text-slate-600 max-w-2xl mx-auto leading-relaxed font-medium">
               Synchronize your entire infrastructure. From AI-driven technical blueprints to granular departmental analytics, MoonSync Pro is the ultimate terminal for modern service delivery.
             </p>
-            <div className="flex flex-wrap gap-4 pt-4">
+            <div className="flex flex-wrap justify-center gap-4 pt-4">
               <Button size="lg" onClick={() => login('Admin')} className="h-16 px-10 text-lg rounded-2xl shadow-2xl shadow-primary/30 font-bold bg-primary group transition-all hover:-translate-y-1">
                 Launch Command
                 <ArrowRight className="ml-2 w-6 h-6 group-hover:translate-x-1 transition-transform" />
@@ -102,7 +102,7 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="relative animate-fade-in" style={{ animationDelay: '200ms' }}>
+          <div className="relative w-full max-w-4xl animate-fade-in" style={{ animationDelay: '200ms' }}>
             <div className="relative z-10 p-4 glass rounded-[2.5rem] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.15)]">
                <Image 
                 src={getImageUrl('hero-dashboard')} 
@@ -116,16 +116,15 @@ export default function Home() {
             </div>
             
             {/* Abstract Decorative Elements */}
-            <div className="absolute -top-12 -right-12 w-64 h-64 bg-accent/20 rounded-full blur-3xl animate-pulse-slow -z-10" />
-            <div className="absolute -bottom-12 -left-12 w-64 h-64 bg-primary/10 rounded-full blur-3xl animate-pulse-slow -z-10" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-primary/5 rounded-full blur-[120px] -z-10" />
             
             {/* Floating Stats */}
-            <div className="absolute top-1/4 -right-12 glass p-5 rounded-2xl shadow-2xl animate-float hidden xl:block">
+            <div className="absolute -top-12 -right-6 glass p-5 rounded-2xl shadow-2xl animate-float hidden xl:block">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-primary/10 rounded-lg text-primary">
                   <CheckCircle2 className="w-6 h-6" />
                 </div>
-                <div>
+                <div className="text-left">
                   <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Sync Status</p>
                   <p className="text-sm font-black">All Systems Nominal</p>
                 </div>
@@ -136,20 +135,13 @@ export default function Home() {
       </header>
 
       {/* Features Grid */}
-      <section className="py-32 px-6">
+      <section id="features" className="py-32 px-6">
         <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col md:flex-row justify-between items-end gap-8 mb-20">
-            <div className="space-y-4">
-              <h2 className="text-4xl md:text-5xl font-black tracking-tight text-slate-900">Engineered for Scale</h2>
-              <p className="text-lg text-slate-500 max-w-xl">
-                Custom-built architecture designed to eliminate friction between marketing capture and technical execution.
-              </p>
-            </div>
-            <div className="flex gap-2">
-              <div className="w-12 h-1 rounded-full bg-primary" />
-              <div className="w-12 h-1 rounded-full bg-slate-200" />
-              <div className="w-12 h-1 rounded-full bg-slate-200" />
-            </div>
+          <div className="flex flex-col items-center text-center gap-6 mb-20">
+            <h2 className="text-4xl md:text-6xl font-black tracking-tight text-slate-900">Engineered for Scale</h2>
+            <p className="text-lg text-slate-500 max-w-2xl">
+              Custom-built architecture designed to eliminate friction between marketing capture and technical execution.
+            </p>
           </div>
 
           <div className="grid md:grid-cols-2 gap-8">
