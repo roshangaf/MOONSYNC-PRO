@@ -1,0 +1,23 @@
+
+{
+  "placeholderImages": [
+    {
+      "id": "hero-dashboard",
+      "description": "MoonSync Pro Dashboard Interface",
+      "imageUrl": "https://picsum.photos/seed/moon-dashboard/1200/800",
+      "imageHint": "dashboard software"
+    },
+    {
+      "id": "feature-ai",
+      "description": "AI Driven Task Refinement",
+      "imageUrl": "https://picsum.photos/seed/ai-refine/600/400",
+      "imageHint": "artificial intelligence"
+    },
+    {
+      "id": "feature-stats",
+      "description": "Performance Analytics",
+      "imageUrl": "https://picsum.photos/seed/stats-view/600/400",
+      "imageHint": "data charts"
+    }
+  ]
+}
