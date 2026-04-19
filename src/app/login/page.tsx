@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -20,6 +20,14 @@ export default function CompanyLoginPage() {
   const { toast } = useToast()
   const { login } = useAuth()
 
+  useEffect(() => {
+    // Check if company is already verified in this browser session
+    const companyVerified = localStorage.getItem('company_verified') === 'true';
+    if (companyVerified) {
+      setStep(2);
+    }
+  }, []);
+
   const handleCompanyVerify = (e: React.FormEvent) => {
     e.preventDefault()
     // Simulated company verification
@@ -36,6 +44,7 @@ export default function CompanyLoginPage() {
     setTimeout(() => {
       setIsVerifying(false)
       setStep(2)
+      localStorage.setItem('company_verified', 'true');
       toast({
         title: "Access Granted",
         description: "Company credentials verified. Please select your terminal role.",
@@ -46,6 +55,11 @@ export default function CompanyLoginPage() {
   const handleRoleSelect = (role: Role) => {
     login(role)
   }
+
+  const handleResetCompany = () => {
+    localStorage.removeItem('company_verified');
+    setStep(1);
+  };
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-6 font-body">
@@ -130,9 +144,9 @@ export default function CompanyLoginPage() {
                     variant="ghost" 
                     size="sm" 
                     className="mt-4 text-xs font-bold text-slate-400 uppercase tracking-widest hover:text-primary transition-colors"
-                    onClick={() => setStep(1)}
+                    onClick={handleResetCompany}
                 >
-                    Back to Handshake
+                    Back to Company Handshake
                 </Button>
               </div>
             )}

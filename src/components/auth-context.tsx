@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
@@ -37,7 +38,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = () => {
     setUser(null);
     localStorage.removeItem('performa_user');
-    router.push('/');
+    // Redirect to login page - the login page will handle starting at Step 2
+    // if the company is still verified in its own state.
+    router.push('/login');
   };
 
   return (
