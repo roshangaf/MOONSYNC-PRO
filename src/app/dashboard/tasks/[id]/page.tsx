@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useEffect } from "react"
@@ -9,7 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { useAuth } from "@/components/auth-context"
 import { MOCK_TASKS, MOCK_USERS } from "@/lib/store"
 import { useToast } from "@/hooks/use-toast"
-import { Clock, Play, Square, UserPlus, CheckCircle, ArrowLeft, UserCheck } from "lucide-react"
+import { Clock, Play, Square, UserPlus, CheckCircle, ArrowLeft, UserCheck, Phone, MapPin, User } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 export default function TaskDetailPage() {
@@ -93,9 +92,41 @@ export default function TaskDetailPage() {
               </div>
             </CardHeader>
             <CardContent className="space-y-6 pt-6">
+              {(task.contactName || task.contactNumber || task.address) && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-slate-50 rounded-xl border border-slate-100">
+                  {task.contactName && (
+                    <div className="flex items-center gap-3">
+                      <User className="h-4 w-4 text-primary" />
+                      <div>
+                        <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Contact Person</p>
+                        <p className="text-sm font-bold">{task.contactName}</p>
+                      </div>
+                    </div>
+                  )}
+                  {task.contactNumber && (
+                    <div className="flex items-center gap-3">
+                      <Phone className="h-4 w-4 text-primary" />
+                      <div>
+                        <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Phone Number</p>
+                        <p className="text-sm font-bold">{task.contactNumber}</p>
+                      </div>
+                    </div>
+                  )}
+                  {task.address && (
+                    <div className="flex items-center gap-3 md:col-span-2 border-t pt-2 mt-2">
+                      <MapPin className="h-4 w-4 text-primary" />
+                      <div>
+                        <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Service Address</p>
+                        <p className="text-sm font-bold">{task.address}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div className="space-y-2">
                 <h4 className="font-bold text-slate-900 uppercase tracking-tighter">Job Overview</h4>
-                <p className="text-slate-600 leading-relaxed">{task.description}</p>
+                <p className="text-slate-600 leading-relaxed">{task.description || "No overview provided."}</p>
               </div>
               
               <div className="space-y-2">

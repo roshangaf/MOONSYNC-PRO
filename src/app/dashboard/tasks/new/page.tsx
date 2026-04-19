@@ -13,11 +13,15 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { refineMarketerTask } from "@/ai/flows/marketer-task-refinement-flow"
 import { useToast } from "@/hooks/use-toast"
-import { Loader2, Sparkles, Wand2 } from "lucide-react"
+import { Loader2, Sparkles, Wand2, MapPin, User, Phone } from "lucide-react"
+import { useAuth } from "@/components/auth-context"
 
 const taskSchema = z.object({
   title: z.string().min(5, "Title must be at least 5 characters"),
-  description: z.string().min(10, "Description must be at least 10 characters"),
+  description: z.string().optional(),
+  contactName: z.string().optional(),
+  contactNumber: z.string().optional(),
+  address: z.string().optional(),
   priority: z.enum(["Low", "Medium", "High", "Critical"]),
 })
 
@@ -29,6 +33,7 @@ export default function NewTaskPage() {
     steps?: string[];
   } | null>(null)
   
+  const { user } = useAuth()
   const { toast } = useToast()
   const router = useRouter()
 
@@ -37,6 +42,9 @@ export default function NewTaskPage() {
     defaultValues: {
       title: "",
       description: "",
+      contactName: "",
+      contactNumber: "",
+      address: "",
       priority: "Medium",
     },
   })
@@ -74,7 +82,7 @@ export default function NewTaskPage() {
   function onSubmit(values: z.infer<typeof taskSchema>) {
     toast({
       title: "Task Created Successfully",
-      description: "Admin will now assign this task to a technician.",
+      description: `Job listed by ${user?.name}. Admin will now assign this task.`,
     })
     router.push("/dashboard/tasks")
   }
@@ -83,15 +91,15 @@ export default function NewTaskPage() {
     <div className="max-w-3xl mx-auto space-y-6">
       <div className="space-y-1">
         <h1 className="text-3xl font-bold tracking-tight text-primary">Create New Service Task</h1>
-        <p className="text-muted-foreground">Marketers bring in the work. Describe the requirement accurately.</p>
+        <p className="text-muted-foreground">Detail the requirement. Originator: <span className="font-bold text-primary">{user?.name}</span></p>
       </div>
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-          <Card className="border-t-4 border-t-primary">
+          <Card className="border-t-4 border-t-primary shadow-lg">
             <CardHeader>
-              <CardTitle>Basic Details</CardTitle>
-              <CardDescription>Enter the core requirements for the job.</CardDescription>
+              <CardTitle>Job Identification</CardTitle>
+              <CardDescription>Enter the core details for the service request.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <FormField
@@ -99,9 +107,59 @@ export default function NewTaskPage() {
                 name="title"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Task Title</FormLabel>
+                    <FormLabel>Task Title / Subject</FormLabel>
                     <FormControl>
                       <Input placeholder="e.g. Server Maintenance for Client XYZ" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                  control={form.control}
+                  name="contactName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-2">
+                        <User className="h-3 w-3" /> Contact Name (Optional)
+                      </FormLabel>
+                      <FormControl>
+                        <Input placeholder="John Doe" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="contactNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-2">
+                        <Phone className="h-3 w-3" /> Phone Number (Optional)
+                      </FormLabel>
+                      <FormControl>
+                        <Input placeholder="+1 (555) 000-0000" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={form.control}
+                name="address"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-2">
+                      <MapPin className="h-3 w-3" /> Service Address (Optional)
+                    </FormLabel>
+                    <FormControl>
+                      <Input placeholder="123 Business Way, Tech Park" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -113,7 +171,7 @@ export default function NewTaskPage() {
                 name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Job Description</FormLabel>
+                    <FormLabel>Job Description (Optional)</FormLabel>
                     <FormControl>
                       <Textarea 
                         placeholder="Provide a high-level overview of what needs to be done..." 

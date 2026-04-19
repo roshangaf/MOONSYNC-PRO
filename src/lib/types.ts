@@ -17,6 +17,9 @@ export interface Task {
   id: string;
   title: string;
   description: string;
+  contactName?: string;
+  contactNumber?: string;
+  address?: string;
   detailedDescription?: string;
   subTasks?: string[];
   steps?: string[];
