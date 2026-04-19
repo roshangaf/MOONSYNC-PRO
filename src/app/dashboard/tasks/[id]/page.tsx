@@ -13,6 +13,7 @@ import { Clock, Play, Square, UserPlus, CheckCircle, ArrowLeft, UserCheck, Phone
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { TaskStatus } from "@/lib/types"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { cn } from "@/lib/utils"
 
 export default function TaskDetailPage() {
   const { id } = useParams()
@@ -168,7 +169,13 @@ export default function TaskDetailPage() {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-xl border border-slate-100">
+                    <a 
+                      href={task.contactNumber ? `tel:${task.contactNumber}` : undefined}
+                      className={cn(
+                        "flex items-center gap-4 p-4 bg-slate-50 rounded-xl border border-slate-100 transition-colors",
+                        task.contactNumber && "hover:bg-primary/5 active:scale-[0.98] cursor-pointer"
+                      )}
+                    >
                       <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
                         <Phone className="h-5 w-5" />
                       </div>
@@ -176,7 +183,7 @@ export default function TaskDetailPage() {
                         <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Verification Contact</p>
                         <p className="text-md font-bold text-slate-900">{task.contactNumber || "Not Provided"}</p>
                       </div>
-                    </div>
+                    </a>
 
                     <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-xl border border-slate-100">
                       <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
