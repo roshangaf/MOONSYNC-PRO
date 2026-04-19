@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useRef } from "react";
@@ -98,36 +97,6 @@ export default function Home() {
               <div className="flex items-center gap-4 px-6 h-16 rounded-2xl border-2 border-slate-200 bg-white/50 backdrop-blur font-bold text-slate-700">
                 <Activity className="w-5 h-5 text-emerald-500" />
                 99.99% Uptime
-              </div>
-            </div>
-          </div>
-
-          <div className="relative w-full max-w-4xl animate-fade-in" style={{ animationDelay: '200ms' }}>
-            <div className="relative z-10 p-4 glass rounded-[2.5rem] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.15)]">
-               <Image 
-                src={getImageUrl('hero-dashboard')} 
-                alt="MoonSync Dashboard" 
-                width={1200} 
-                height={800}
-                className="w-full rounded-[1.8rem] object-cover border border-slate-200/50"
-                priority
-                data-ai-hint={getImageHint('hero-dashboard')}
-              />
-            </div>
-            
-            {/* Abstract Decorative Elements */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-primary/5 rounded-full blur-[120px] -z-10" />
-            
-            {/* Floating Stats */}
-            <div className="absolute -top-12 -right-6 glass p-5 rounded-2xl shadow-2xl animate-float hidden xl:block">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-primary/10 rounded-lg text-primary">
-                  <CheckCircle2 className="w-6 h-6" />
-                </div>
-                <div className="text-left">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Sync Status</p>
-                  <p className="text-sm font-black">All Systems Nominal</p>
-                </div>
               </div>
             </div>
           </div>
