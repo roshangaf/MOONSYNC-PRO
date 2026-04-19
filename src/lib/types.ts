@@ -58,6 +58,7 @@ export interface BillItem {
   id: string;
   particular: string;
   amount: number;
+  quantity: number;
 }
 
 export interface Bill {
