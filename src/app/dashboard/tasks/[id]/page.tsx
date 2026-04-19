@@ -9,9 +9,10 @@ import { Badge } from "@/components/ui/badge"
 import { useAuth } from "@/components/auth-context"
 import { MOCK_TASKS, MOCK_USERS } from "@/lib/store"
 import { useToast } from "@/hooks/use-toast"
-import { Clock, Play, Square, UserPlus, CheckCircle, ArrowLeft, UserCheck, Phone, MapPin, User, Calendar, Settings2 } from "lucide-react"
+import { Clock, Play, Square, UserPlus, CheckCircle, ArrowLeft, UserCheck, Phone, MapPin, User, Calendar, Settings2, Info, ListChecks } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { TaskStatus } from "@/lib/types"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export default function TaskDetailPage() {
   const { id } = useParams()
@@ -50,7 +51,7 @@ export default function TaskDetailPage() {
     return () => clearInterval(interval);
   }, [isLoggingTime]);
 
-  if (!task) return <div>Task not found</div>;
+  if (!task) return <div className="p-20 text-center font-bold">Task Terminal Error: Document Not Found</div>;
 
   const handleAssign = () => {
     if (!assigneeId) return;
@@ -102,13 +103,13 @@ export default function TaskDetailPage() {
 
       <div className="flex flex-col md:flex-row gap-6">
         <div className="flex-1 space-y-6">
-          <Card className="shadow-lg border-none">
+          <Card className="shadow-lg border-none overflow-hidden bg-white">
             <CardHeader className="border-b bg-muted/20">
               <div className="flex items-center justify-between mb-4">
                 <Badge variant={getStatusColor(task.status)} className="font-bold uppercase tracking-widest">{task.status}</Badge>
                 <Badge variant="outline" className="font-bold border-primary text-primary">{task.priority} Priority</Badge>
               </div>
-              <CardTitle className="text-3xl font-black tracking-tight text-slate-900">{task.title}</CardTitle>
+              <CardTitle className="text-3xl font-black tracking-tight text-slate-900 uppercase">{task.title}</CardTitle>
               <div className="flex flex-col sm:flex-row sm:items-center gap-4 mt-4">
                 <div className="flex items-center gap-2 text-sm font-medium text-slate-500">
                   <UserCheck className="h-4 w-4 text-primary" />
@@ -120,58 +121,75 @@ export default function TaskDetailPage() {
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="space-y-6 pt-6">
-              {(task.contactName || task.contactNumber || task.address) && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-slate-50 rounded-xl border border-slate-100">
-                  {task.contactName && (
-                    <div className="flex items-center gap-3">
-                      <User className="h-4 w-4 text-primary" />
-                      <div>
-                        <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Contact Person</p>
-                        <p className="text-sm font-bold">{task.contactName}</p>
-                      </div>
-                    </div>
-                  )}
-                  {task.contactNumber && (
-                    <div className="flex items-center gap-3">
-                      <Phone className="h-4 w-4 text-primary" />
-                      <div>
-                        <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Phone Number</p>
-                        <p className="text-sm font-bold">{task.contactNumber}</p>
-                      </div>
-                    </div>
-                  )}
-                  {task.address && (
-                    <div className="flex items-center gap-3 md:col-span-2 border-t pt-2 mt-2">
-                      <MapPin className="h-4 w-4 text-primary" />
-                      <div>
-                        <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Service Address</p>
-                        <p className="text-sm font-bold">{task.address}</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
+            <CardContent className="pt-6">
+              <Tabs defaultValue="overview" className="w-full">
+                <TabsList className="grid w-full grid-cols-2 bg-muted/50 p-1 mb-6">
+                  <TabsTrigger value="overview" className="font-bold uppercase text-[10px] tracking-widest">
+                    <ListChecks className="h-3 w-3 mr-2" />
+                    Job Overview
+                  </TabsTrigger>
+                  <TabsTrigger value="details" className="font-bold uppercase text-[10px] tracking-widest">
+                    <Info className="h-3 w-3 mr-2" />
+                    Customer Details
+                  </TabsTrigger>
+                </TabsList>
 
-              <div className="space-y-2">
-                <h4 className="font-bold text-slate-900 uppercase tracking-tighter">Job Overview</h4>
-                <p className="text-slate-600 leading-relaxed">{task.description || "No overview provided."}</p>
-              </div>
-              
-              <div className="space-y-2">
-                <h4 className="font-bold text-slate-900 uppercase tracking-tighter">Operational Requirements</h4>
-                <div className="p-5 bg-primary/5 rounded-2xl text-sm space-y-3 border border-primary/10">
-                  <p className="flex gap-2">
-                    <span className="font-black text-primary">01.</span> Analyze current infrastructure constraints and dependency map.
-                  </p>
-                  <p className="flex gap-2">
-                    <span className="font-black text-primary">02.</span> Prepare secure staging environment for validation protocols.
-                  </p>
-                  <p className="flex gap-2">
-                    <span className="font-black text-primary">03.</span> Execute primary task flow following IT security handbooks.
-                  </p>
-                </div>
-              </div>
+                <TabsContent value="overview" className="space-y-6">
+                  <div className="space-y-2">
+                    <h4 className="font-black text-slate-900 uppercase tracking-tighter text-xs">Requirement Analysis</h4>
+                    <p className="text-slate-600 leading-relaxed text-sm">{task.description || "No overview provided."}</p>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <h4 className="font-black text-slate-900 uppercase tracking-tighter text-xs">Operational Blueprints</h4>
+                    <div className="p-5 bg-primary/5 rounded-2xl text-sm space-y-3 border border-primary/10">
+                      <p className="flex gap-2">
+                        <span className="font-black text-primary">01.</span> Analyze current infrastructure constraints and dependency map.
+                      </p>
+                      <p className="flex gap-2">
+                        <span className="font-black text-primary">02.</span> Prepare secure staging environment for validation protocols.
+                      </p>
+                      <p className="flex gap-2">
+                        <span className="font-black text-primary">03.</span> Execute primary task flow following IT security handbooks.
+                      </p>
+                    </div>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="details" className="space-y-6">
+                  <div className="grid grid-cols-1 gap-4">
+                    <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-xl border border-slate-100">
+                      <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                        <User className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Customer Identity</p>
+                        <p className="text-md font-bold text-slate-900">{task.contactName || "Direct Transaction / Cash"}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-xl border border-slate-100">
+                      <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                        <Phone className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Verification Contact</p>
+                        <p className="text-md font-bold text-slate-900">{task.contactNumber || "Not Provided"}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-xl border border-slate-100">
+                      <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                        <MapPin className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Deployment / Service Address</p>
+                        <p className="text-md font-bold text-slate-900">{task.address || "Over-the-counter Service"}</p>
+                      </div>
+                    </div>
+                  </div>
+                </TabsContent>
+              </Tabs>
             </CardContent>
           </Card>
         </div>
@@ -269,7 +287,7 @@ export default function TaskDetailPage() {
             </Card>
           )}
 
-          <Card className="border-none shadow-md">
+          <Card className="border-none shadow-md bg-white">
             <CardHeader className="pb-2">
               <CardTitle className="text-xs font-black uppercase tracking-widest text-muted-foreground">Task Metadata</CardTitle>
             </CardHeader>
@@ -290,7 +308,7 @@ export default function TaskDetailPage() {
               )}
               <div className="flex justify-between items-center py-2 border-b border-slate-50">
                 <span className="text-muted-foreground font-bold text-[10px] uppercase">Org Dept</span>
-                <span className="font-bold text-xs">IT SERVICES</span>
+                <span className="font-bold text-xs uppercase">{user?.department || 'IT SERVICES'}</span>
               </div>
               <div className="flex justify-between items-center py-2">
                 <span className="text-muted-foreground font-bold text-[10px] uppercase">Sync Status</span>
