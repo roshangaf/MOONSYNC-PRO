@@ -1,22 +1,39 @@
 
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { MOCK_TASKS, MOCK_USERS } from "@/lib/store"
 import { useAuth } from "@/components/auth-context"
-import { Briefcase, Filter, Plus, Search, Download, Calendar } from "lucide-react"
+import { Briefcase, Filter, Plus, Search, Download, Calendar, Check } from "lucide-react"
 import Link from "next/link"
 import { useToast } from "@/hooks/use-toast"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  DropdownMenuCheckboxItem,
+} from "@/components/ui/dropdown-menu"
 
 export default function TasksPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
+  const [mounted, setMounted] = useState(false);
+  const [filterPriority, setFilterPriority] = useState<string[]>([]);
+  const [filterStatus, setFilterStatus] = useState<string[]>([]);
+
+  // Avoid hydration mismatch for dates
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const getStaffName = (id?: string) => {
     return MOCK_USERS.find(u => u.id === id)?.name || "Unassigned";
@@ -38,10 +55,32 @@ export default function TasksPage() {
     });
   };
 
-  const filteredTasks = MOCK_TASKS.filter(t => 
-    t.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    t.description.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredTasks = MOCK_TASKS.filter(t => {
+    const matchesSearch = t.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         t.description.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesPriority = filterPriority.length === 0 || filterPriority.includes(t.priority);
+    const matchesStatus = filterStatus.length === 0 || filterStatus.includes(t.status);
+
+    return matchesSearch && matchesPriority && matchesStatus;
+  });
+
+  const togglePriorityFilter = (priority: string) => {
+    setFilterPriority(prev => 
+      prev.includes(priority) ? prev.filter(p => p !== priority) : [...prev, priority]
+    );
+  };
+
+  const toggleStatusFilter = (status: string) => {
+    setFilterStatus(prev => 
+      prev.includes(status) ? prev.filter(s => s !== status) : [...prev, status]
+    );
+  };
+
+  const formatDate = (dateString: string) => {
+    if (!mounted) return "";
+    return new Date(dateString).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' });
+  };
 
   return (
     <div className="space-y-6">
@@ -74,9 +113,54 @@ export default function TasksPage() {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <Button variant="outline" size="icon">
-          <Filter className="h-4 w-4" />
-        </Button>
+        
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="icon" className={filterPriority.length > 0 || filterStatus.length > 0 ? "border-accent text-accent" : ""}>
+              <Filter className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuLabel>Filter Tasks</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <div className="p-2">
+              <p className="text-[10px] font-bold uppercase text-muted-foreground mb-2">Priority</p>
+              {["Critical", "High", "Medium", "Low"].map((p) => (
+                <DropdownMenuCheckboxItem
+                  key={p}
+                  checked={filterPriority.includes(p)}
+                  onCheckedChange={() => togglePriorityFilter(p)}
+                >
+                  {p}
+                </DropdownMenuCheckboxItem>
+              ))}
+            </div>
+            <DropdownMenuSeparator />
+            <div className="p-2">
+              <p className="text-[10px] font-bold uppercase text-muted-foreground mb-2">Status</p>
+              {["Pending", "Assigned", "In Progress", "Completed"].map((s) => (
+                <DropdownMenuCheckboxItem
+                  key={s}
+                  checked={filterStatus.includes(s)}
+                  onCheckedChange={() => toggleStatusFilter(s)}
+                >
+                  {s}
+                </DropdownMenuCheckboxItem>
+              ))}
+            </div>
+            {(filterPriority.length > 0 || filterStatus.length > 0) && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem 
+                  className="text-center justify-center font-bold text-xs text-primary"
+                  onClick={() => { setFilterPriority([]); setFilterStatus([]); }}
+                >
+                  Clear All Filters
+                </DropdownMenuItem>
+              </>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <Card className="shadow-xl border-none overflow-hidden">
@@ -104,7 +188,7 @@ export default function TasksPage() {
                   <TableCell>
                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-mono">
                       <Calendar className="h-3 w-3" />
-                      {new Date(task.createdAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
+                      {formatDate(task.createdAt)}
                     </div>
                   </TableCell>
                   <TableCell>
