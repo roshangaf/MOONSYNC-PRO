@@ -1,26 +1,15 @@
 "use client"
 
-import { useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { useAuth } from "@/components/auth-context";
 import { 
-  ShieldCheck, 
-  Briefcase, 
-  Wrench, 
-  Wallet, 
   Building2, 
   ArrowRight, 
-  CheckCircle2, 
   BarChart3, 
-  Users2, 
   Cpu,
-  ChevronDown,
   Activity,
   Zap,
-  Lock
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 
@@ -64,11 +53,7 @@ export default function Home() {
             </div>
             <span className="text-2xl font-bold tracking-tight text-primary">MoonSync Pro</span>
           </div>
-          <div className="hidden md:flex items-center gap-8 text-sm font-semibold text-slate-600">
-            <a href="#features" className="hover:text-primary transition-colors">Features</a>
-            <a href="#" className="hover:text-primary transition-colors">Network</a>
-            <a href="#" className="hover:text-primary transition-colors">Security</a>
-          </div>
+          
           <Button onClick={() => login('Admin')} className="rounded-full px-8 font-bold bg-primary hover:bg-primary/90 shadow-xl shadow-primary/20 transition-all hover:scale-105 active:scale-95">
             Admin Login
           </Button>
@@ -76,13 +61,13 @@ export default function Home() {
       </nav>
 
       {/* Hero Section */}
-      <header className="pt-56 pb-32 px-6">
-        <div className="max-w-5xl mx-auto flex flex-col items-center text-center space-y-12">
+      <header className="pt-64 pb-32 px-6">
+        <div className="max-w-4xl mx-auto text-center space-y-12">
           <div className="space-y-8 animate-fade-in">
             <div className="inline-flex items-center px-5 py-2 rounded-full bg-white border border-slate-200 shadow-sm text-primary text-xs font-bold uppercase tracking-widest">
               MOONSYNC PRO by JAGEER
             </div>
-            <h1 className="text-6xl md:text-9xl font-black tracking-tighter leading-[0.85] text-slate-900">
+            <h1 className="text-6xl md:text-8xl font-black tracking-tighter leading-[0.85] text-slate-900">
               The Engine of <br />
               <span className="text-primary italic">Precision</span> IT.
             </h1>
@@ -99,6 +84,14 @@ export default function Home() {
                 99.99% Uptime
               </div>
             </div>
+          </div>
+          
+          <div className="pt-12 animate-fade-in delay-500">
+             <div className="inline-flex items-center gap-3 px-6 py-3 rounded-2xl bg-slate-900 text-white font-mono text-sm shadow-2xl">
+               <Zap className="w-4 h-4 text-accent animate-pulse" />
+               <span className="opacity-50">Sync Status:</span>
+               <span className="text-accent">All Systems Nominal</span>
+             </div>
           </div>
         </div>
       </header>
