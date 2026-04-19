@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -13,13 +13,13 @@ import {
   Plus, 
   Trash2, 
   Receipt, 
-  Calculator, 
   Building2, 
   QrCode, 
   Printer, 
   Download, 
   Hash,
-  CheckCircle2
+  CheckCircle2,
+  XCircle
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { Bill, BillItem, BillType } from "@/lib/types"
@@ -35,6 +35,19 @@ export default function BillingPage() {
   const [items, setItems] = useState<BillItem[]>([])
   const [bills, setBills] = useState<Bill[]>([])
   const [isGenerating, setIsGenerating] = useState(false)
+
+  // Load bills from localStorage for cross-page synchronization
+  useEffect(() => {
+    const savedBills = localStorage.getItem('moonsync_bills');
+    if (savedBills) {
+      setBills(JSON.parse(savedBills));
+    }
+  }, []);
+
+  const saveBillsToStorage = (updatedBills: Bill[]) => {
+    localStorage.setItem('moonsync_bills', JSON.stringify(updatedBills));
+    setBills(updatedBills);
+  };
 
   const addItem = () => {
     if (!particulars || !amount || !quantity) {
@@ -61,6 +74,16 @@ export default function BillingPage() {
 
   const removeItem = (id: string) => {
     setItems(items.filter(item => item.id !== id))
+  }
+
+  const voidBill = (id: string) => {
+    const updatedBills = bills.filter(bill => bill.id !== id);
+    saveBillsToStorage(updatedBills);
+    toast({
+      title: "Bill Voided",
+      description: `Document ${id} has been removed from the ledger.`,
+      variant: "destructive"
+    });
   }
 
   const subtotal = items.reduce((sum, item) => sum + (item.amount * item.quantity), 0)
@@ -94,7 +117,7 @@ export default function BillingPage() {
         currency: "NRS"
       }
 
-      setBills([newBill, ...bills])
+      saveBillsToStorage([newBill, ...bills]);
       setItems([])
       setClientName("")
       setAddress("")
@@ -102,7 +125,7 @@ export default function BillingPage() {
       
       toast({
         title: "E-Bill Generated",
-        description: `Document ${billId} for ${finalClientName} is ready.`,
+        description: `Document ${billId} for ${finalClientName} is ready and synced with Accounting.`,
       })
     }, 800)
   }
@@ -112,7 +135,7 @@ export default function BillingPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1">
           <h1 className="text-3xl font-bold tracking-tight text-primary">E-Billing Terminal</h1>
-          <p className="text-muted-foreground">Digital VAT invoicing & commercial estimates for MoonSync Pro.</p>
+          <p className="text-muted-foreground">Digital VAT invoicing & commercial estimates synced with Finance.</p>
         </div>
       </div>
 
@@ -229,7 +252,6 @@ export default function BillingPage() {
           <CardContent className="p-0 flex-1 flex flex-col bg-white">
             {items.length > 0 ? (
               <div className="flex-1 flex flex-col p-8 md:p-12 space-y-10">
-                {/* E-Bill Header */}
                 <div className="flex justify-between items-start border-b border-slate-100 pb-8">
                   <div className="space-y-2">
                     <div className="flex items-center gap-3">
@@ -312,9 +334,6 @@ export default function BillingPage() {
                       <span className="text-sm font-black uppercase tracking-widest">Total Payable</span>
                       <span className="text-2xl font-black text-primary-foreground">NRS {grandTotal.toLocaleString()}</span>
                     </div>
-                    <p className="text-[9px] text-center text-slate-400 font-bold uppercase tracking-widest pt-2">
-                      Authorized Digital Signature Applied
-                    </p>
                   </div>
                 </div>
               </div>
@@ -326,7 +345,7 @@ export default function BillingPage() {
                       <TableHead className="text-[10px] font-black uppercase">Bill Number</TableHead>
                       <TableHead className="text-[10px] font-black uppercase">Client Information</TableHead>
                       <TableHead className="text-right text-[10px] font-black uppercase">Grand Total (NRS)</TableHead>
-                      <TableHead className="text-right text-[10px] font-black uppercase">Log</TableHead>
+                      <TableHead className="text-right text-[10px] font-black uppercase">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -353,7 +372,18 @@ export default function BillingPage() {
                           NRS {bill.totalAmount.toLocaleString()}
                         </TableCell>
                         <TableCell className="text-right">
-                          <CheckCircle2 className="h-4 w-4 text-emerald-500 inline" />
+                          <div className="flex items-center justify-end gap-2">
+                             <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                             <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                onClick={() => voidBill(bill.id)}
+                                title="Void Bill"
+                             >
+                               <XCircle className="h-4 w-4" />
+                             </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}

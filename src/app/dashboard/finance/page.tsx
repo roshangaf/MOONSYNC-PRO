@@ -1,25 +1,44 @@
 
 "use client"
 
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Wallet, TrendingUp, ArrowUpRight, ArrowDownRight, FileText, Download } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Bill } from "@/lib/types"
 
 export default function FinancePage() {
-  const transactions = [
-    { id: 'tx-001', client: 'Alpha Corp', service: 'Cloud Migration', amount: 'NRS 4,500.00', status: 'Paid', date: '2024-03-01' },
-    { id: 'tx-002', client: 'Beta Systems', service: 'Security Audit', amount: 'NRS 2,200.00', status: 'Pending', date: '2024-03-05' },
-    { id: 'tx-003', client: 'Gamma Tech', service: 'Hardware Sync', amount: 'NRS 1,800.00', status: 'Overdue', date: '2024-02-15' },
+  const [bills, setBills] = useState<Bill[]>([])
+
+  // Mock static transactions for combined view
+  const staticTransactions = [
+    { id: 'tx-001', client: 'Alpha Corp', service: 'Cloud Migration', amount: 4500, status: 'Paid', date: '2024-03-01' },
+    { id: 'tx-002', client: 'Beta Systems', service: 'Security Audit', amount: 2200, status: 'Pending', date: '2024-03-05' },
+    { id: 'tx-003', client: 'Gamma Tech', service: 'Hardware Sync', amount: 1800, status: 'Overdue', date: '2024-02-15' },
   ];
+
+  useEffect(() => {
+    const savedBills = localStorage.getItem('moonsync_bills');
+    if (savedBills) {
+      setBills(JSON.parse(savedBills));
+    }
+  }, []);
+
+  const totalRevenue = bills.reduce((sum, bill) => sum + bill.totalAmount, 0) + 
+                       staticTransactions.reduce((sum, tx) => sum + tx.amount, 0);
+
+  const outstandingValue = staticTransactions
+    .filter(tx => tx.status !== 'Paid')
+    .reduce((sum, tx) => sum + tx.amount, 0);
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1">
           <h1 className="text-3xl font-bold tracking-tight text-primary">Financial Management</h1>
-          <p className="text-muted-foreground">Monitor billable hours, service invoicing, and resource allocation in NRS.</p>
+          <p className="text-muted-foreground">Monitor billable hours, service invoicing, and synchronized billing data in NRS.</p>
         </div>
         <div className="flex items-center gap-3">
           <Button variant="outline" className="border-primary text-primary hover:bg-primary/5">
@@ -36,7 +55,7 @@ export default function FinancePage() {
             <Wallet className="h-4 w-4 text-emerald-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">NRS 124,500.00</div>
+            <div className="text-2xl font-bold">NRS {totalRevenue.toLocaleString()}.00</div>
             <div className="flex items-center text-xs text-emerald-500 font-bold mt-1">
               <ArrowUpRight className="h-3 w-3 mr-1" /> +12.5% vs Last Month
             </div>
@@ -60,9 +79,9 @@ export default function FinancePage() {
             <FileText className="h-4 w-4 text-orange-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">14</div>
+            <div className="text-2xl font-bold">{staticTransactions.filter(tx => tx.status !== 'Paid').length}</div>
             <div className="flex items-center text-xs text-orange-500 font-bold mt-1">
-              <ArrowDownRight className="h-3 w-3 mr-1" /> NRS 8,400.00 Receivable
+              <ArrowDownRight className="h-3 w-3 mr-1" /> NRS {outstandingValue.toLocaleString()}.00 Receivable
             </div>
           </CardContent>
         </Card>
@@ -70,8 +89,8 @@ export default function FinancePage() {
 
       <Card className="shadow-xl">
         <CardHeader className="bg-muted/30 border-b">
-          <CardTitle className="text-lg">Recent Billing Activity</CardTitle>
-          <CardDescription>Consolidated view of all service-related financial transactions (NRS) and sync logs.</CardDescription>
+          <CardTitle className="text-lg">Recent Billing & Sync Activity</CardTitle>
+          <CardDescription>Consolidated view of static transactions and live generated E-Bills (NRS).</CardDescription>
         </CardHeader>
         <CardContent className="p-0">
           <Table>
@@ -79,13 +98,34 @@ export default function FinancePage() {
               <TableRow>
                 <TableHead className="font-bold text-xs">ID / Date</TableHead>
                 <TableHead className="font-bold text-xs">Client / Account</TableHead>
-                <TableHead className="font-bold text-xs">Service Category</TableHead>
+                <TableHead className="font-bold text-xs">Type / Service</TableHead>
                 <TableHead className="font-bold text-xs">Transaction Value</TableHead>
                 <TableHead className="font-bold text-xs">System Status</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {transactions.map((tx) => (
+              {/* Live Synced Bills */}
+              {bills.map((bill) => (
+                <TableRow key={bill.id} className="hover:bg-emerald-50/50 transition-colors">
+                  <TableCell>
+                    <div className="flex flex-col">
+                      <span className="font-mono text-[10px] font-bold text-primary">{bill.id}</span>
+                      <span className="text-[10px] text-muted-foreground">{new Date(bill.createdAt).toLocaleDateString()}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="font-bold text-sm">{bill.clientName}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className="text-[10px] font-bold uppercase tracking-widest bg-emerald-50">SYNCED {bill.type}</Badge>
+                  </TableCell>
+                  <TableCell className="font-mono font-bold text-emerald-600">NRS {bill.totalAmount.toLocaleString()}</TableCell>
+                  <TableCell>
+                    <Badge variant="secondary" className="text-[10px] bg-emerald-100 text-emerald-700">Live</Badge>
+                  </TableCell>
+                </TableRow>
+              ))}
+              
+              {/* Static Legacy Transactions */}
+              {staticTransactions.map((tx) => (
                 <TableRow key={tx.id} className="hover:bg-primary/5 transition-colors">
                   <TableCell>
                     <div className="flex flex-col">
@@ -97,7 +137,7 @@ export default function FinancePage() {
                   <TableCell>
                     <Badge variant="outline" className="text-[10px] font-bold uppercase tracking-widest">{tx.service}</Badge>
                   </TableCell>
-                  <TableCell className="font-mono font-bold">{tx.amount}</TableCell>
+                  <TableCell className="font-mono font-bold">NRS {tx.amount.toLocaleString()}.00</TableCell>
                   <TableCell>
                     <Badge variant={tx.status === 'Paid' ? 'secondary' : tx.status === 'Pending' ? 'default' : 'destructive'} className="text-[10px]">
                       {tx.status}
