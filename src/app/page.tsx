@@ -2,7 +2,6 @@
 "use client"
 
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/components/auth-context";
 import { 
   Building2, 
   ArrowRight, 
@@ -12,10 +11,9 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
+import Link from "next/link";
 
 export default function Home() {
-  const { login } = useAuth();
-
   const features = [
     {
       title: "AI Task Architect",
@@ -54,8 +52,8 @@ export default function Home() {
             <span className="text-2xl font-bold tracking-tight text-primary">MoonSync Pro</span>
           </div>
           
-          <Button onClick={() => login('Admin')} className="rounded-full px-8 font-bold bg-primary hover:bg-primary/90 shadow-xl shadow-primary/20 transition-all hover:scale-105 active:scale-95">
-            Admin Login
+          <Button asChild className="rounded-full px-8 font-bold bg-primary hover:bg-primary/90 shadow-xl shadow-primary/20 transition-all hover:scale-105 active:scale-95">
+            <Link href="/login">Login</Link>
           </Button>
         </div>
       </nav>
@@ -75,9 +73,11 @@ export default function Home() {
               Synchronize your entire infrastructure. From AI-driven technical blueprints to granular departmental analytics, MoonSync Pro is the ultimate terminal for modern service delivery.
             </p>
             <div className="flex flex-wrap justify-center gap-4 pt-4">
-              <Button size="lg" onClick={() => login('Admin')} className="h-16 px-10 text-lg rounded-2xl shadow-2xl shadow-primary/30 font-bold bg-primary group transition-all hover:-translate-y-1">
-                Launch Command
-                <ArrowRight className="ml-2 w-6 h-6 group-hover:translate-x-1 transition-transform" />
+              <Button size="lg" asChild className="h-16 px-10 text-lg rounded-2xl shadow-2xl shadow-primary/30 font-bold bg-primary group transition-all hover:-translate-y-1">
+                <Link href="/login">
+                  Launch Command
+                  <ArrowRight className="ml-2 w-6 h-6 group-hover:translate-x-1 transition-transform" />
+                </Link>
               </Button>
               <div className="flex items-center gap-4 px-6 h-16 rounded-2xl border-2 border-slate-200 bg-white/50 backdrop-blur font-bold text-slate-700">
                 <Activity className="w-5 h-5 text-emerald-500" />
