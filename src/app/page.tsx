@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useRef } from "react";
@@ -26,13 +27,6 @@ import { PlaceHolderImages } from "@/lib/placeholder-images";
 
 export default function Home() {
   const { login } = useAuth();
-
-  const personas = [
-    { role: 'Admin', icon: ShieldCheck, desc: 'Complete organizational oversight and user provisioning.', color: 'from-blue-500 to-indigo-600' },
-    { role: 'Marketing', icon: Briefcase, desc: 'Capture requirements and refine tasks with Gemini AI.', color: 'from-cyan-400 to-blue-500' },
-    { role: 'Technician', icon: Wrench, desc: 'Integrated time tracking and technical execution guides.', color: 'from-indigo-500 to-purple-600' },
-    { role: 'Finance', icon: Wallet, desc: 'Deep-dive billable analytics and resource allocation.', color: 'from-emerald-400 to-teal-500' },
-  ];
 
   const features = [
     {
@@ -87,7 +81,6 @@ export default function Home() {
         <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 items-center">
           <div className="space-y-8 animate-fade-in">
             <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-white border border-slate-200 shadow-sm text-primary text-xs font-bold uppercase tracking-widest">
-              <Zap className="w-3 h-3 fill-current" />
               MOONSYNC PRO by JAGEER
             </div>
             <h1 className="text-6xl md:text-8xl font-black tracking-tighter leading-[0.9] text-slate-900">
@@ -183,30 +176,6 @@ export default function Home() {
                   />
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Persona Quick Links (Alternative to Terminal) */}
-      <section className="py-24 px-6 bg-slate-50/50">
-        <div className="max-w-7xl mx-auto text-center space-y-12">
-          <div className="space-y-4">
-            <h2 className="text-3xl font-bold tracking-tight">Access Your Interface</h2>
-            <p className="text-slate-500">Quickly jump into your departmental dashboard.</p>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {personas.map((persona) => (
-              <button 
-                key={persona.role}
-                onClick={() => login(persona.role as any)}
-                className="group p-6 bg-white border border-slate-200 rounded-2xl hover:border-primary/50 hover:shadow-lg transition-all text-center space-y-3"
-              >
-                <div className={cn("w-10 h-10 mx-auto rounded-lg flex items-center justify-center bg-gradient-to-br text-white", persona.color)}>
-                  <persona.icon className="w-5 h-5" />
-                </div>
-                <span className="block font-bold text-sm">{persona.role}</span>
-              </button>
             ))}
           </div>
         </div>
