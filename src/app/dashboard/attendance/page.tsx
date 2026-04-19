@@ -38,6 +38,8 @@ export default function AttendancePage() {
   const [isPinging, setIsPinging] = useState(false);
   const [terminalStatus, setTerminalStatus] = useState<'Online' | 'Offline'>('Online');
 
+  const isManagement = user?.role === 'Admin' || user?.role === 'Finance';
+
   useEffect(() => {
     const timer = setInterval(() => {
       const now = new Date();
@@ -76,6 +78,7 @@ export default function AttendancePage() {
   };
 
   const pingTerminal = () => {
+    if (!isManagement) return;
     setIsPinging(true);
     setTimeout(() => {
       const success = Math.random() > 0.1;
@@ -90,6 +93,7 @@ export default function AttendancePage() {
   };
 
   const syncHardwareData = () => {
+    if (!isManagement) return;
     if (terminalStatus === 'Offline') {
       toast({
         title: "Sync Failed",
@@ -101,10 +105,9 @@ export default function AttendancePage() {
 
     setIsSyncing(true);
     setTimeout(() => {
-      // Sync logic improved to use current user context if admin is syncing for self or general testing
       const hardwareRecord: AttendanceRecord = {
         id: `hw-${Math.random().toString(36).substr(2, 5)}`,
-        userId: user?.role === 'Admin' ? '4' : (user?.id || '4'), // Defaults to Tina if unknown
+        userId: '4', // Simulating another user for management view
         date: new Date().toISOString().split('T')[0],
         checkIn: '08:45 AM',
         status: 'Present',
@@ -123,7 +126,7 @@ export default function AttendancePage() {
   const generateReport = () => {
     toast({
       title: "Generating Comprehensive Report",
-      description: "Compiling check-in/check-out metrics for " + (user?.role === 'Admin' ? "All Staff" : user?.name),
+      description: `Compiling metrics for ${isManagement ? "Full Organization" : "Personal Ledger"}`,
     });
   };
 
@@ -131,7 +134,7 @@ export default function AttendancePage() {
     return MOCK_USERS.find(u => u.id === id)?.name || "Unknown User";
   };
 
-  const filteredRecords = user?.role === 'Admin' 
+  const filteredRecords = isManagement 
     ? records 
     : records.filter(r => r.userId === user?.id);
 
@@ -142,13 +145,17 @@ export default function AttendancePage() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1">
-          <h1 className="text-3xl font-bold tracking-tight text-primary">Time Management Console</h1>
-          <p className="text-muted-foreground">Monitor check-in/out logs and synchronize with biometric hardware.</p>
+          <h1 className="text-3xl font-bold tracking-tight text-primary">Attendance Console</h1>
+          <p className="text-muted-foreground">
+            {isManagement 
+              ? "Monitor organizational check-ins and synchronize biometric hardware." 
+              : "Track your personal shift check-ins and daily logs."}
+          </p>
         </div>
         <div className="flex items-center gap-3">
           <Button variant="outline" onClick={generateReport} className="hidden sm:flex border-primary text-primary hover:bg-primary/5">
             <Download className="mr-2 h-4 w-4" />
-            Export Daily Report
+            {isManagement ? "Export Daily Audit" : "Download My Logs"}
           </Button>
           <Card className="flex items-center gap-4 px-6 py-3 border-primary/20 bg-primary/5">
             <Clock className="h-5 w-5 text-primary animate-pulse" />
@@ -162,7 +169,7 @@ export default function AttendancePage() {
           <Card className="border-t-4 border-t-primary shadow-lg">
             <CardHeader className="pb-2">
               <CardTitle className="text-lg">Manual Logging</CardTitle>
-              <CardDescription>Direct terminal check-in.</CardDescription>
+              <CardDescription>Direct terminal clock-in.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex flex-col gap-3">
@@ -172,7 +179,7 @@ export default function AttendancePage() {
                     onClick={() => handleAction('check-in')}
                   >
                     <LogIn className="mr-2 h-5 w-5" />
-                    Check In
+                    Clock In
                   </Button>
                 ) : (
                   <Button 
@@ -181,92 +188,84 @@ export default function AttendancePage() {
                     onClick={() => handleAction('check-out')}
                   >
                     <LogOut className="mr-2 h-5 w-5" />
-                    Check Out
+                    Clock Out
                   </Button>
                 )}
               </div>
             </CardContent>
           </Card>
 
-          <Card className="border-t-4 border-t-accent shadow-lg">
-            <CardHeader className="pb-2">
-              <CardTitle className="flex items-center justify-between text-lg">
-                Device Connectivity
-                <Badge variant={terminalStatus === 'Online' ? 'default' : 'destructive'} className="text-[10px]">
-                  {terminalStatus === 'Online' ? <Wifi className="h-3 w-3 mr-1" /> : <WifiOff className="h-3 w-3 mr-1" />}
-                  {terminalStatus}
-                </Badge>
-              </CardTitle>
-              <CardDescription>Bio-Matrix Hardware Interface.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="p-3 bg-accent/5 rounded-lg border border-accent/20 text-sm space-y-2">
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-muted-foreground">Main Terminal:</span>
-                  <span className="font-mono text-[10px]">192.168.1.105</span>
+          {isManagement && (
+            <Card className="border-t-4 border-t-accent shadow-lg">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center justify-between text-lg">
+                  Device Connectivity
+                  <Badge variant={terminalStatus === 'Online' ? 'default' : 'destructive'} className="text-[10px]">
+                    {terminalStatus === 'Online' ? <Wifi className="h-3 w-3 mr-1" /> : <WifiOff className="h-3 w-3 mr-1" />}
+                    {terminalStatus}
+                  </Badge>
+                </CardTitle>
+                <CardDescription>Bio-Matrix Hardware Interface.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="p-3 bg-accent/5 rounded-lg border border-accent/20 text-sm space-y-2">
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-muted-foreground">Main Terminal:</span>
+                    <span className="font-mono text-[10px]">192.168.1.105</span>
+                  </div>
                 </div>
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-muted-foreground">Protocol:</span>
-                  <span className="font-mono text-[10px]">TCP/IP Secure</span>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className="w-full text-xs"
+                    onClick={pingTerminal}
+                    disabled={isPinging}
+                  >
+                    {isPinging ? <RefreshCw className="h-3 w-3 animate-spin mr-1" /> : <Activity className="h-3 w-3 mr-1" />}
+                    Ping Device
+                  </Button>
+                  <Button 
+                    variant="default" 
+                    size="sm"
+                    className="w-full text-xs bg-accent hover:bg-accent/90"
+                    onClick={syncHardwareData}
+                    disabled={isSyncing}
+                  >
+                    {isSyncing ? <RefreshCw className="h-3 w-3 animate-spin mr-1" /> : <RefreshCw className="h-3 w-3 mr-1" />}
+                    Sync Logs
+                  </Button>
                 </div>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  className="w-full text-xs"
-                  onClick={pingTerminal}
-                  disabled={isPinging}
-                >
-                  {isPinging ? <RefreshCw className="h-3 w-3 animate-spin mr-1" /> : <Activity className="h-3 w-3 mr-1" />}
-                  Ping Device
-                </Button>
-                <Button 
-                  variant="default" 
-                  size="sm"
-                  className="w-full text-xs bg-accent hover:bg-accent/90"
-                  onClick={syncHardwareData}
-                  disabled={isSyncing}
-                >
-                  {isSyncing ? <RefreshCw className="h-3 w-3 animate-spin mr-1" /> : <RefreshCw className="h-3 w-3 mr-1" />}
-                  Sync Logs
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          )}
 
           <Card className="shadow-lg">
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 text-sm">
                 <ShieldCheck className="h-4 w-4 text-emerald-500" />
-                Compliance Tracker
+                {isManagement ? "Organization Compliance" : "Shift Performance"}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <div className="flex justify-between text-xs">
-                  <span>Shift Compliance</span>
+                  <span>Reliability Rate</span>
                   <span className="font-bold">{Math.round(attendancePercentage)}%</span>
                 </div>
                 <Progress value={attendancePercentage} className="h-1.5" />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-muted/30 p-3 rounded-lg text-center border">
-                  <p className="text-[10px] uppercase font-bold text-muted-foreground">Hours Logged</p>
-                  <p className="text-lg font-bold">164h</p>
+                  <p className="text-[10px] uppercase font-bold text-muted-foreground">Total Sessions</p>
+                  <p className="text-lg font-bold">{filteredRecords.length}</p>
                 </div>
                 <div className="bg-muted/30 p-3 rounded-lg text-center border">
-                  <p className="text-[10px] uppercase font-bold text-muted-foreground">Exceptions</p>
-                  <p className="text-lg font-bold text-orange-600">2</p>
+                  <p className="text-[10px] uppercase font-bold text-muted-foreground">Status</p>
+                  <p className="text-sm font-bold text-emerald-600">Active</p>
                 </div>
               </div>
             </CardContent>
-            <CardFooter className="pt-0">
-              <Button variant="ghost" size="sm" className="w-full text-xs text-primary" onClick={generateReport}>
-                <FileText className="mr-2 h-3 w-3" />
-                View Full Audit Log
-              </Button>
-            </CardFooter>
           </Card>
         </div>
 
@@ -275,12 +274,14 @@ export default function AttendancePage() {
             <div>
               <CardTitle>Attendance & Shift Ledger</CardTitle>
               <CardDescription>
-                Synchronized data from manual terminals and biometric hardware.
+                {isManagement 
+                  ? "Consolidated view of organizational session data." 
+                  : "Personal record of your daily attendance and origin tracking."}
               </CardDescription>
             </div>
             <div className="flex items-center gap-2">
               <Badge variant="outline" className="bg-white">
-                {filteredRecords.length} Logs Total
+                {filteredRecords.length} Entries
               </Badge>
             </div>
           </CardHeader>
@@ -288,11 +289,10 @@ export default function AttendancePage() {
             <Table>
               <TableHeader className="bg-muted/50">
                 <TableRow>
-                  <TableHead className="font-bold text-xs">Personnel</TableHead>
-                  <TableHead className="font-bold text-xs">Date</TableHead>
-                  <TableHead className="font-bold text-xs">Time (In/Out)</TableHead>
-                  <TableHead className="font-bold text-xs">Origin Machine</TableHead>
-                  <TableHead className="font-bold text-xs">Verification</TableHead>
+                  <TableHead className="font-bold text-xs uppercase">Personnel</TableHead>
+                  <TableHead className="font-bold text-xs uppercase">Date</TableHead>
+                  <TableHead className="font-bold text-xs uppercase">Time (In/Out)</TableHead>
+                  <TableHead className="font-bold text-xs uppercase">Verification Source</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -305,7 +305,9 @@ export default function AttendancePage() {
                         </div>
                         <div className="flex flex-col">
                           <span className="text-sm font-semibold">{getStaffName(record.userId)}</span>
-                          <span className="text-[10px] text-muted-foreground uppercase font-medium">{record.userId === user?.id ? 'Self' : 'Staff'}</span>
+                          <span className="text-[10px] text-muted-foreground uppercase font-medium">
+                            {record.userId === user?.id ? 'Me' : 'Staff'}
+                          </span>
                         </div>
                       </div>
                     </TableCell>
@@ -328,16 +330,8 @@ export default function AttendancePage() {
                         ) : (
                           <MapPin className="h-3 w-3 text-primary" />
                         )}
-                        <span className="text-[10px] font-semibold">{record.location || 'Local Terminal'}</span>
+                        <span className="text-[10px] font-semibold">{record.location || 'Terminal-A1'}</span>
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge 
-                        variant="outline"
-                        className={record.status === 'Present' ? 'border-green-500 text-green-700 bg-green-50' : 'border-red-500 text-red-700 bg-red-50'}
-                      >
-                        {record.status}
-                      </Badge>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -352,10 +346,10 @@ export default function AttendancePage() {
           </CardContent>
           <CardFooter className="bg-muted/20 border-t p-4 flex justify-between items-center">
             <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">
-              Last Sync: {new Date().toLocaleTimeString()}
+              Last Handshake: {new Date().toLocaleTimeString()}
             </span>
             <Button variant="outline" size="sm" className="text-[10px] h-7" onClick={generateReport}>
-              <Download className="h-3 w-3 mr-1" /> Download CSV Audit
+              <Download className="h-3 w-3 mr-1" /> PDF Audit Log
             </Button>
           </CardFooter>
         </Card>
