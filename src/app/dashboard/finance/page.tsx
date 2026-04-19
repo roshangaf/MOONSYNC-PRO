@@ -38,15 +38,17 @@ export default function FinancePage() {
     setLegacyTransactions(prev => prev.map(tx => tx.id === id ? { ...tx, status: newStatus } : tx));
     toast({
       title: "Ledger Updated",
-      description: `Transaction ${id} is now marked as ${newStatus}.`,
+      description: `Transaction ${id} is now marked as ${newStatus}. ${newStatus === 'Void' ? 'Amount removed from revenue.' : ''}`,
     });
   };
 
   const totalRevenue = bills.reduce((sum, bill) => sum + bill.totalAmount, 0) + 
-                       legacyTransactions.reduce((sum, tx) => sum + tx.amount, 0);
+                       legacyTransactions
+                         .filter(tx => tx.status !== 'Void')
+                         .reduce((sum, tx) => sum + tx.amount, 0);
 
   const outstandingValue = legacyTransactions
-    .filter(tx => tx.status !== 'Paid')
+    .filter(tx => tx.status === 'Pending' || tx.status === 'Overdue')
     .reduce((sum, tx) => sum + tx.amount, 0);
 
   return (
@@ -95,7 +97,7 @@ export default function FinancePage() {
             <FileText className="h-4 w-4 text-orange-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{legacyTransactions.filter(tx => tx.status !== 'Paid').length}</div>
+            <div className="text-2xl font-bold">{legacyTransactions.filter(tx => tx.status === 'Pending' || tx.status === 'Overdue').length}</div>
             <div className="flex items-center text-xs text-orange-500 font-bold mt-1">
               <ArrowDownRight className="h-3 w-3 mr-1" /> NRS {outstandingValue.toLocaleString()}.00 Receivable
             </div>
@@ -142,7 +144,7 @@ export default function FinancePage() {
               
               {/* Static Legacy Transactions */}
               {legacyTransactions.map((tx) => (
-                <TableRow key={tx.id} className="hover:bg-primary/5 transition-colors">
+                <TableRow key={tx.id} className={`hover:bg-primary/5 transition-colors ${tx.status === 'Void' ? 'opacity-50' : ''}`}>
                   <TableCell>
                     <div className="flex flex-col">
                       <span className="font-mono text-[10px] font-bold text-primary">{tx.id}</span>
@@ -153,13 +155,19 @@ export default function FinancePage() {
                   <TableCell>
                     <Badge variant="outline" className="text-[10px] font-bold uppercase tracking-widest">{tx.service}</Badge>
                   </TableCell>
-                  <TableCell className="font-mono font-bold">NRS {tx.amount.toLocaleString()}.00</TableCell>
+                  <TableCell className={`font-mono font-bold ${tx.status === 'Void' ? 'line-through text-muted-foreground' : ''}`}>
+                    NRS {tx.amount.toLocaleString()}.00
+                  </TableCell>
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" className="h-fit p-0 hover:bg-transparent group">
                           <Badge 
-                            variant={tx.status === 'Paid' ? 'secondary' : tx.status === 'Pending' ? 'default' : 'destructive'} 
+                            variant={
+                              tx.status === 'Paid' ? 'secondary' : 
+                              tx.status === 'Pending' ? 'default' : 
+                              tx.status === 'Void' ? 'outline' : 'destructive'
+                            } 
                             className="text-[10px] cursor-pointer hover:ring-2 hover:ring-primary/20 transition-all flex items-center gap-1"
                           >
                             {tx.status}
@@ -173,6 +181,8 @@ export default function FinancePage() {
                         <DropdownMenuItem onClick={() => updateStatus(tx.id, 'Paid')} className="text-xs font-bold">Mark as Paid</DropdownMenuItem>
                         <DropdownMenuItem onClick={() => updateStatus(tx.id, 'Pending')} className="text-xs font-bold">Mark as Pending</DropdownMenuItem>
                         <DropdownMenuItem onClick={() => updateStatus(tx.id, 'Overdue')} className="text-xs font-bold text-destructive">Mark as Overdue</DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => updateStatus(tx.id, 'Void')} className="text-xs font-bold text-destructive">Void Transaction</DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
