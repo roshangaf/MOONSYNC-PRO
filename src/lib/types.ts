@@ -45,6 +45,7 @@ export interface AttendanceRecord {
   checkOut?: string;
   status: 'Present' | 'Late' | 'Absent';
   location?: string;
+  source?: 'Manual' | 'Hardware' | 'Mobile';
 }
 
 export interface PerformanceStats {
