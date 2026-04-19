@@ -87,7 +87,6 @@ export default function Home() {
 
         <div className="max-w-6xl mx-auto text-center space-y-8 animate-fade-in">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/5 border border-primary/10 text-primary text-sm font-semibold mb-4">
-            <Sparkles className="w-4 h-4" />
             MOONSYNC PRO by JAGEER
           </div>
           <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight text-slate-900 leading-[1.1]">
