@@ -8,6 +8,7 @@ export interface User {
   role: Role;
   department: Department;
   avatar?: string;
+  pin: string; // Added for identity verification
 }
 
 export type TaskStatus = 'Pending' | 'Assigned' | 'In Progress' | 'Completed' | 'On Hold';
@@ -70,6 +71,7 @@ export interface Bill {
   totalAmount: number;
   createdAt: string;
   currency: 'NRS';
+  status?: 'Paid' | 'Pending' | 'Overdue' | 'Void';
 }
 
 export interface PerformanceStats {
