@@ -7,11 +7,11 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { useAuth } from "@/components/auth-context"
-import { MOCK_TASKS, MOCK_USERS } from "@/lib/store"
+import { MOCK_USERS } from "@/lib/store"
 import { useToast } from "@/hooks/use-toast"
-import { Clock, Play, Square, UserPlus, CheckCircle, ArrowLeft, UserCheck, Phone, MapPin, User, Calendar, Settings2, Info, ListChecks } from "lucide-react"
+import { Clock, Play, Square, UserPlus, CheckCircle, ArrowLeft, UserCheck, Phone, MapPin, User, Calendar, Settings2, Info, ListChecks, Trash2 } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { TaskStatus } from "@/lib/types"
+import { TaskStatus, Task } from "@/lib/types"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { cn } from "@/lib/utils"
 
@@ -21,10 +21,22 @@ export default function TaskDetailPage() {
   const { user } = useAuth()
   const { toast } = useToast()
   
-  const [task, setTask] = useState(MOCK_TASKS.find(t => t.id === id))
+  const [task, setTask] = useState<Task | null>(null)
   const [isLoggingTime, setIsLoggingTime] = useState(false)
   const [timer, setTimer] = useState(0)
-  const [assigneeId, setAssigneeId] = useState(task?.assignedTo || "")
+  const [assigneeId, setAssigneeId] = useState("")
+
+  useEffect(() => {
+    const savedTasksStr = localStorage.getItem('moonsync_tasks');
+    if (savedTasksStr) {
+      const savedTasks: Task[] = JSON.parse(savedTasksStr);
+      const foundTask = savedTasks.find(t => t.id === id);
+      if (foundTask) {
+        setTask(foundTask);
+        setAssigneeId(foundTask.assignedTo || "");
+      }
+    }
+  }, [id]);
 
   const getStaffName = (id?: string) => {
     return MOCK_USERS.find(u => u.id === id)?.name || "Unknown Personnel";
@@ -56,7 +68,9 @@ export default function TaskDetailPage() {
 
   const handleAssign = () => {
     if (!assigneeId) return;
-    setTask({ ...task, assignedTo: assigneeId, status: 'Assigned' });
+    const updatedTask = { ...task, assignedTo: assigneeId, status: 'Assigned' as TaskStatus };
+    setTask(updatedTask);
+    updateTaskInStorage(updatedTask);
     toast({
       title: "Task Assigned",
       description: `Task assigned to ${MOCK_USERS.find(u => u.id === assigneeId)?.name}`,
@@ -64,11 +78,37 @@ export default function TaskDetailPage() {
   };
 
   const handleStatusChange = (newStatus: TaskStatus) => {
-    setTask({ ...task, status: newStatus });
+    const updatedTask = { ...task, status: newStatus };
+    setTask(updatedTask);
+    updateTaskInStorage(updatedTask);
     toast({
       title: "Status Updated",
       description: `Task status changed to ${newStatus}`,
     });
+  };
+
+  const handleDeleteTask = () => {
+    const savedTasksStr = localStorage.getItem('moonsync_tasks');
+    if (savedTasksStr) {
+      const savedTasks: Task[] = JSON.parse(savedTasksStr);
+      const updatedTasks = savedTasks.filter(t => t.id !== task.id);
+      localStorage.setItem('moonsync_tasks', JSON.stringify(updatedTasks));
+      toast({
+        title: "Task Deleted",
+        description: `Task ${task.id} permanently removed.`,
+        variant: "destructive",
+      });
+      router.push("/dashboard/tasks");
+    }
+  };
+
+  const updateTaskInStorage = (updatedTask: Task) => {
+    const savedTasksStr = localStorage.getItem('moonsync_tasks');
+    if (savedTasksStr) {
+      const savedTasks: Task[] = JSON.parse(savedTasksStr);
+      const updatedTasks = savedTasks.map(t => t.id === updatedTask.id ? updatedTask : t);
+      localStorage.setItem('moonsync_tasks', JSON.stringify(updatedTasks));
+    }
   };
 
   const toggleTimeLogging = () => {
@@ -79,10 +119,14 @@ export default function TaskDetailPage() {
         description: `Logged ${Math.floor(timer / 60)} minutes of work. Job marked completed at ${new Date(completionTime).toLocaleTimeString()}.`,
       });
       setIsLoggingTime(false);
-      setTask({ ...task, status: 'Completed', completedAt: completionTime });
+      const updatedTask = { ...task, status: 'Completed' as TaskStatus, completedAt: completionTime };
+      setTask(updatedTask);
+      updateTaskInStorage(updatedTask);
     } else {
       setIsLoggingTime(true);
-      setTask({ ...task, status: 'In Progress' });
+      const updatedTask = { ...task, status: 'In Progress' as TaskStatus };
+      setTask(updatedTask);
+      updateTaskInStorage(updatedTask);
     }
   };
 
@@ -97,10 +141,18 @@ export default function TaskDetailPage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      <Button variant="ghost" onClick={() => router.back()} className="-ml-2 hover:bg-primary/5 text-primary font-bold">
-        <ArrowLeft className="mr-2 h-4 w-4" />
-        Back to Task Ledger
-      </Button>
+      <div className="flex items-center justify-between">
+        <Button variant="ghost" onClick={() => router.back()} className="-ml-2 hover:bg-primary/5 text-primary font-bold">
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Task Ledger
+        </Button>
+        {user?.role === 'Admin' && (
+          <Button variant="destructive" size="sm" onClick={handleDeleteTask} className="font-bold uppercase text-[10px] tracking-widest">
+            <Trash2 className="mr-2 h-4 w-4" />
+            Delete Task
+          </Button>
+        )}
+      </div>
 
       <div className="flex flex-col md:flex-row gap-6">
         <div className="flex-1 space-y-6">
@@ -287,8 +339,7 @@ export default function TaskDetailPage() {
                   disabled={isLoggingTime || task.status === 'Completed'}
                   onClick={() => handleStatusChange('Completed')}
                 >
-                  <CheckCircle className="mr-2 h-4 w-4" />
-                  Finalize Job
+                  <><CheckCircle className="mr-2 h-4 w-4" /> Finalize Job</>
                 </Button>
               </CardFooter>
             </Card>

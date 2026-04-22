@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { MOCK_TASKS, MOCK_USERS } from "@/lib/store"
 import { useAuth } from "@/components/auth-context"
-import { Briefcase, Filter, Plus, Search, Download, Calendar, User, Phone, MapPin, Info } from "lucide-react"
+import { Briefcase, Filter, Plus, Search, Download, Calendar, User, Phone, MapPin, Info, Trash2 } from "lucide-react"
 import Link from "next/link"
 import { useToast } from "@/hooks/use-toast"
 import {
@@ -22,6 +22,7 @@ import {
   DropdownMenuCheckboxItem,
 } from "@/components/ui/dropdown-menu"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Task } from "@/lib/types"
 
 export default function TasksPage() {
   const { user } = useAuth();
@@ -30,9 +31,17 @@ export default function TasksPage() {
   const [mounted, setMounted] = useState(false);
   const [filterPriority, setFilterPriority] = useState<string[]>([]);
   const [filterStatus, setFilterStatus] = useState<string[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
 
   useEffect(() => {
     setMounted(true);
+    const savedTasks = localStorage.getItem('moonsync_tasks');
+    if (savedTasks) {
+      setTasks(JSON.parse(savedTasks));
+    } else {
+      setTasks(MOCK_TASKS);
+      localStorage.setItem('moonsync_tasks', JSON.stringify(MOCK_TASKS));
+    }
   }, []);
 
   const getStaffName = (id?: string) => {
@@ -65,7 +74,18 @@ export default function TasksPage() {
     });
   };
 
-  const filteredTasks = MOCK_TASKS.filter(t => {
+  const handleDeleteTask = (id: string) => {
+    const updatedTasks = tasks.filter(t => t.id !== id);
+    setTasks(updatedTasks);
+    localStorage.setItem('moonsync_tasks', JSON.stringify(updatedTasks));
+    toast({
+      title: "Task Deleted",
+      description: `Task ${id} has been permanently removed from the terminal.`,
+      variant: "destructive",
+    });
+  };
+
+  const filteredTasks = tasks.filter(t => {
     const matchesSearch = t.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          t.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          (t.contactName && t.contactName.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -76,14 +96,14 @@ export default function TasksPage() {
     return matchesSearch && matchesPriority && matchesStatus;
   });
 
-  const uniqueCustomers = Array.from(new Set(MOCK_TASKS.map(t => t.contactName).filter(Boolean)))
+  const uniqueCustomers = Array.from(new Set(tasks.map(t => t.contactName).filter(Boolean)))
     .map(name => {
-      const task = MOCK_TASKS.find(t => t.contactName === name);
+      const task = tasks.find(t => t.contactName === name);
       return {
         name,
         phone: task?.contactNumber || "Not Provided",
         address: task?.address || "No Address Found",
-        tasks: MOCK_TASKS.filter(t => t.contactName === name)
+        tasks: tasks.filter(t => t.contactName === name)
       }
     });
 
@@ -108,17 +128,17 @@ export default function TasksPage() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1">
-          <h1 className="text-3xl font-bold tracking-tight text-primary">Job & Task Portal</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-primary uppercase">Job & Task Portal</h1>
           <p className="text-muted-foreground">Track and manage service requests across all departments with precise timestamps.</p>
         </div>
         <div className="flex items-center gap-3">
           {user?.role === 'Admin' && (
-            <Button variant="outline" onClick={handleDownloadReport} className="border-primary text-primary hover:bg-primary/5">
+            <Button variant="outline" onClick={handleDownloadReport} className="border-primary text-primary hover:bg-primary/5 font-bold uppercase text-[10px] tracking-widest">
               <Download className="mr-2 h-4 w-4" />
               Download Audit Report
             </Button>
           )}
-          <Button asChild className="bg-accent hover:bg-accent/90 text-white shadow-lg shadow-accent/20">
+          <Button asChild className="bg-accent hover:bg-accent/90 text-white shadow-lg shadow-accent/20 font-bold uppercase text-[10px] tracking-widest h-10">
             <Link href="/dashboard/tasks/new">
               <Plus className="mr-2 h-4 w-4" />
               Add Job
@@ -206,7 +226,7 @@ export default function TasksPage() {
                 </TableHeader>
                 <TableBody>
                   {filteredTasks.map((task) => (
-                    <TableRow key={task.id} className="cursor-pointer hover:bg-primary/5 transition-colors">
+                    <TableRow key={task.id} className="hover:bg-primary/5 transition-colors">
                       <TableCell>
                         <div className="flex flex-col">
                           <span className="font-bold text-sm text-slate-900">{task.title}</span>
@@ -238,9 +258,21 @@ export default function TasksPage() {
                         </div>
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button variant="ghost" size="sm" asChild className="text-primary font-bold hover:bg-primary/5">
-                          <Link href={`/dashboard/tasks/${task.id}`}>Manage</Link>
-                        </Button>
+                        <div className="flex justify-end gap-2">
+                          <Button variant="ghost" size="sm" asChild className="text-primary font-bold hover:bg-primary/5">
+                            <Link href={`/dashboard/tasks/${task.id}`}>Manage</Link>
+                          </Button>
+                          {user?.role === 'Admin' && (
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                              onClick={() => handleDeleteTask(task.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
