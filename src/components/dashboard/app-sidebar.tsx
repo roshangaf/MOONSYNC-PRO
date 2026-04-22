@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -14,7 +15,8 @@ import {
   CheckCircle2,
   PlusCircle,
   CalendarCheck,
-  Receipt
+  Receipt,
+  Building2
 } from "lucide-react"
 
 import {
@@ -44,6 +46,12 @@ export function AppSidebar() {
       url: "/dashboard",
       icon: LayoutDashboard,
       roles: ["Admin", "Marketing", "Technician", "Finance"],
+    },
+    {
+      title: "Company",
+      url: "/dashboard/company",
+      icon: Building2,
+      roles: ["Admin"],
     },
     {
       title: "Attendance",
