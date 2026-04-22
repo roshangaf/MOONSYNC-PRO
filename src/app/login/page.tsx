@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Building2, ShieldCheck, Lock, ArrowRight, Loader2, Sparkles, UserLock } from "lucide-react"
+import { Building2, ShieldCheck, Lock, ArrowRight, Loader2, Sparkles } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/components/auth-context"
 import { Role } from "@/lib/types"
@@ -100,7 +100,7 @@ export default function CompanyLoginPage() {
          <div className="h-2 bg-primary animate-pulse-slow" />
          <CardHeader className="text-center space-y-4 pt-10">
            <div className="mx-auto w-16 h-16 bg-primary rounded-2xl flex items-center justify-center shadow-lg shadow-primary/20 rotate-3 hover:rotate-0 transition-transform duration-500">
-             {step === 3 ? <UserLock className="w-10 h-10 text-white" /> : <Building2 className="w-10 h-10 text-white" />}
+             {step === 3 ? <ShieldCheck className="w-10 h-10 text-white" /> : <Building2 className="w-10 h-10 text-white" />}
            </div>
            <div>
              <CardTitle className="text-2xl font-black tracking-tight text-slate-900">
