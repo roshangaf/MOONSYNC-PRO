@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Building2, ShieldCheck, Lock, ArrowRight, Loader2, Sparkles } from "lucide-react"
+import { Building2, ShieldCheck, Lock, ArrowRight, Loader2, Sparkles, UserLock } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/components/auth-context"
 import { Role } from "@/lib/types"
@@ -14,14 +14,15 @@ import { Role } from "@/lib/types"
 export default function CompanyLoginPage() {
   const [domain, setDomain] = useState("")
   const [token, setToken] = useState("")
+  const [deptPassword, setDeptPassword] = useState("")
   const [isVerifying, setIsVerifying] = useState(false)
   const [step, setStep] = useState(1)
+  const [selectedRole, setSelectedRole] = useState<Role | null>(null)
   const router = useRouter()
   const { toast } = useToast()
   const { login } = useAuth()
 
   useEffect(() => {
-    // Check if company is already verified in this browser session
     const companyVerified = localStorage.getItem('company_verified') === 'true';
     if (companyVerified) {
       setStep(2);
@@ -30,7 +31,6 @@ export default function CompanyLoginPage() {
 
   const handleCompanyVerify = (e: React.FormEvent) => {
     e.preventDefault()
-    // Simulated company verification
     if (!domain.toLowerCase().includes("moonsync")) {
       toast({
         title: "Invalid Company",
@@ -49,16 +49,47 @@ export default function CompanyLoginPage() {
         title: "Access Granted",
         description: "Company credentials verified. Please select your terminal role.",
       })
-    }, 1500)
+    }, 1200)
   }
 
   const handleRoleSelect = (role: Role) => {
-    login(role)
+    setSelectedRole(role)
+    setStep(3)
   }
 
-  const handleResetCompany = () => {
-    localStorage.removeItem('company_verified');
-    setStep(1);
+  const handleDeptLogin = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!deptPassword || deptPassword.length < 4) {
+      toast({
+        title: "Invalid Signature",
+        description: "Departmental access keys must be at least 4 characters.",
+        variant: "destructive"
+      })
+      return
+    }
+
+    setIsVerifying(true)
+    setTimeout(() => {
+      setIsVerifying(false)
+      if (selectedRole) {
+        login(selectedRole)
+        toast({
+          title: "Session Initialized",
+          description: `Authorized as ${selectedRole.toUpperCase()} Department.`,
+        })
+      }
+    }, 1000)
+  }
+
+  const handleReset = () => {
+    if (step === 3) {
+      setStep(2)
+      setSelectedRole(null)
+      setDeptPassword("")
+    } else {
+      localStorage.removeItem('company_verified');
+      setStep(1);
+    }
   };
 
   return (
@@ -69,21 +100,23 @@ export default function CompanyLoginPage() {
          <div className="h-2 bg-primary animate-pulse-slow" />
          <CardHeader className="text-center space-y-4 pt-10">
            <div className="mx-auto w-16 h-16 bg-primary rounded-2xl flex items-center justify-center shadow-lg shadow-primary/20 rotate-3 hover:rotate-0 transition-transform duration-500">
-             <Building2 className="w-10 h-10 text-white" />
+             {step === 3 ? <UserLock className="w-10 h-10 text-white" /> : <Building2 className="w-10 h-10 text-white" />}
            </div>
            <div>
              <CardTitle className="text-2xl font-black tracking-tight text-slate-900">
-               {step === 1 ? "Company Access" : "Identity Verification"}
+               {step === 1 ? "Company Access" : step === 2 ? "Terminal Selection" : `${selectedRole} Auth`}
              </CardTitle>
              <CardDescription className="text-slate-500">
                {step === 1 
                  ? "Establish a secure link with the MoonSync infrastructure." 
-                 : "Select your departmental signature to establish a session."}
+                 : step === 2 
+                 ? "Select your departmental signature to continue."
+                 : `Enter credentials for the ${selectedRole} workspace.`}
              </CardDescription>
            </div>
          </CardHeader>
          <CardContent className="pb-10">
-            {step === 1 ? (
+            {step === 1 && (
               <form onSubmit={handleCompanyVerify} className="space-y-6">
                 <div className="space-y-2">
                   <label className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
@@ -120,11 +153,10 @@ export default function CompanyLoginPage() {
                   {isVerifying ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
                   Initialize Handshake
                 </Button>
-                <p className="text-[10px] text-center text-slate-400 uppercase tracking-widest font-bold">
-                  Encryption Layer Active
-                </p>
               </form>
-            ) : (
+            )}
+
+            {step === 2 && (
               <div className="grid gap-3">
                 {(['Admin', 'Marketing', 'Technician', 'Finance'] as Role[]).map((role) => (
                   <Button 
@@ -144,12 +176,54 @@ export default function CompanyLoginPage() {
                     variant="ghost" 
                     size="sm" 
                     className="mt-4 text-xs font-bold text-slate-400 uppercase tracking-widest hover:text-primary transition-colors"
-                    onClick={handleResetCompany}
+                    onClick={handleReset}
                 >
-                    Back to Company Handshake
+                    Reset Handshake
                 </Button>
               </div>
             )}
+
+            {step === 3 && (
+              <form onSubmit={handleDeptLogin} className="space-y-6">
+                <div className="space-y-2">
+                  <label className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                    <ShieldCheck className="w-3 h-3" />
+                    Authorized Personnel Key
+                  </label>
+                  <Input 
+                    type="password"
+                    placeholder="Department Access Code" 
+                    className="h-12 bg-white/50 border-slate-200 focus:ring-primary/20 rounded-xl"
+                    value={deptPassword}
+                    onChange={(e) => setDeptPassword(e.target.value)}
+                    autoFocus
+                    required
+                  />
+                  <p className="text-[9px] text-muted-foreground font-medium italic">Establishing isolated session for {selectedRole} nodes...</p>
+                </div>
+                <div className="flex flex-col gap-3">
+                  <Button 
+                    type="submit" 
+                    className="w-full h-12 bg-primary hover:bg-primary/90 font-bold shadow-lg shadow-primary/20 rounded-xl"
+                    disabled={isVerifying}
+                  >
+                    {isVerifying ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Verify Identity"}
+                  </Button>
+                  <Button 
+                    type="button"
+                    variant="ghost"
+                    className="text-xs font-bold uppercase tracking-widest text-slate-400"
+                    onClick={handleReset}
+                  >
+                    Change Department
+                  </Button>
+                </div>
+              </form>
+            )}
+            
+            <p className="text-[10px] text-center text-slate-400 uppercase tracking-widest font-bold mt-6">
+              {step === 3 ? "Biometric & Key verification active" : "Encryption Layer Active"}
+            </p>
          </CardContent>
        </Card>
     </div>
