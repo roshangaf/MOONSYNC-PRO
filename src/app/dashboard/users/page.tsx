@@ -6,12 +6,20 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { MOCK_USERS } from "@/lib/store"
-import { UserPlus, MoreHorizontal, Mail, Shield, Edit2, UserX, UserCheck } from "lucide-react"
+import { UserPlus, MoreHorizontal, Mail, Shield, Edit2, UserX, UserCheck, Loader2 } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useToast } from "@/hooks/use-toast"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { User, Role, Department } from "@/lib/types"
 
 export default function UsersPage() {
-  const [users] = useState(MOCK_USERS);
+  const [users, setUsers] = useState<User[]>(MOCK_USERS);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
 
   const handleAdminAction = (action: string, userName: string) => {
@@ -19,6 +27,26 @@ export default function UsersPage() {
       title: `${action} Executed`,
       description: `Security protocol performed for ${userName}. Ledger synced.`,
     });
+  };
+
+  const openEditDialog = (user: User) => {
+    setEditingUser({ ...user });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleSaveUser = () => {
+    if (!editingUser) return;
+
+    setIsSaving(true);
+    setTimeout(() => {
+      setUsers(prev => prev.map(u => u.id === editingUser.id ? editingUser : u));
+      setIsEditDialogOpen(false);
+      setIsSaving(false);
+      toast({
+        title: "Profile Synchronized",
+        description: `Identity records for ${editingUser.name} have been updated in the MoonSync core.`,
+      });
+    }, 800);
   };
 
   return (
@@ -93,7 +121,7 @@ export default function UsersPage() {
                         <DropdownMenuItem onClick={() => handleAdminAction("Password Reset", user.name)} className="text-xs font-bold">
                           <Mail className="mr-2 h-4 w-4" /> Reset Credentials
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleAdminAction("Profile Edit", user.name)} className="text-xs font-bold">
+                        <DropdownMenuItem onClick={() => openEditDialog(user)} className="text-xs font-bold">
                           <Edit2 className="mr-2 h-4 w-4" /> Modify Profile
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
@@ -114,6 +142,63 @@ export default function UsersPage() {
            </p>
         </div>
       </Card>
+
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="uppercase tracking-widest text-primary font-black">Edit Personnel Profile</DialogTitle>
+            <DialogDescription>
+              Modify departmental roles and identity metadata for the MoonSync Pro terminal.
+            </DialogDescription>
+          </DialogHeader>
+          {editingUser && (
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="name" className="text-xs font-black uppercase tracking-widest text-muted-foreground">Full Name</Label>
+                <Input
+                  id="name"
+                  value={editingUser.name}
+                  onChange={(e) => setEditingUser({ ...editingUser, name: e.target.value })}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="email" className="text-xs font-black uppercase tracking-widest text-muted-foreground">Email Address</Label>
+                <Input
+                  id="email"
+                  value={editingUser.email}
+                  onChange={(e) => setEditingUser({ ...editingUser, email: e.target.value })}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="role" className="text-xs font-black uppercase tracking-widest text-muted-foreground">Terminal Role</Label>
+                <Select 
+                  value={editingUser.role} 
+                  onValueChange={(v: Role) => setEditingUser({ ...editingUser, role: v, department: v === 'Admin' ? 'Administration' : v as Department })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Admin">Admin</SelectItem>
+                    <SelectItem value="Marketing">Marketing</SelectItem>
+                    <SelectItem value="Technician">Technician</SelectItem>
+                    <SelectItem value="Finance">Finance</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)} className="uppercase font-bold text-xs">Cancel</Button>
+            <Button onClick={handleSaveUser} disabled={isSaving} className="uppercase font-bold text-xs bg-primary">
+              {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
