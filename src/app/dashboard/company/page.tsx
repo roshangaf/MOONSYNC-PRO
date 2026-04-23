@@ -162,6 +162,7 @@ export default function CompanyPage() {
     localStorage.removeItem('company_verified');
     localStorage.removeItem('performa_user');
     localStorage.removeItem('moonsync_last_company');
+    localStorage.setItem('moonsync_was_reset', 'true');
     
     toast({
       title: "Infrastructure Purged",
@@ -391,21 +392,21 @@ export default function CompanyPage() {
             </CardContent>
           </Card>
 
-          <Card className="shadow-lg border-none overflow-hidden bg-destructive/5 border border-destructive/20">
-            <CardHeader>
+          <Card className="shadow-2xl border-2 border-destructive/50 overflow-hidden bg-white">
+            <CardHeader className="bg-destructive/5 border-b border-destructive/10">
               <CardTitle className="text-lg font-black uppercase tracking-widest flex items-center gap-2 text-destructive">
                 <AlertTriangle className="h-5 w-5" />
                 Danger Zone
               </CardTitle>
-              <CardDescription className="text-destructive/60 text-xs font-medium">Irreversible administrative actions.</CardDescription>
+              <CardDescription className="text-destructive/80 text-xs font-medium">Irreversible administrative actions.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 pt-6">
               <p className="text-[11px] leading-relaxed text-destructive/80 font-bold">
                 Executing a factory reset will permanently purge all tasks, financial ledgers, and organizational identity metadata.
               </p>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button variant="destructive" className="w-full font-black uppercase text-[10px] tracking-[0.2em] h-12">
+                  <Button variant="destructive" className="w-full font-black uppercase text-[10px] tracking-[0.2em] h-12 shadow-lg shadow-destructive/20">
                     <Trash2 className="mr-2 h-4 w-4" />
                     Reset Infrastructure
                   </Button>

@@ -16,15 +16,20 @@ export default function DashboardPage() {
   useEffect(() => {
     setMounted(true);
     const savedTasks = localStorage.getItem('moonsync_tasks');
+    const wasReset = localStorage.getItem('moonsync_was_reset') === 'true';
+
     if (savedTasks) {
       setTasks(JSON.parse(savedTasks));
-    } else {
-      // Initialize with mocks if first time, or empty if reset was intentional
+    } else if (!wasReset) {
+      // Only initialize with mocks if not intentionally reset
       const companyVerified = localStorage.getItem('company_verified');
-      if (companyVerified === 'true' && !localStorage.getItem('moonsync_last_company')) {
+      if (companyVerified === 'true') {
          setTasks(MOCK_TASKS);
          localStorage.setItem('moonsync_tasks', JSON.stringify(MOCK_TASKS));
       }
+    } else {
+      // If was reset, start with empty task list
+      setTasks([]);
     }
   }, []);
 
@@ -34,7 +39,7 @@ export default function DashboardPage() {
   const stats = [
     { title: "Active Tasks", value: activeTasksCount, icon: ListTodo, color: "text-blue-500" },
     { title: "Completed (MTD)", value: completedMtd, icon: CheckCircle2, color: "text-green-500" },
-    { title: "Avg Resolution", value: "3.8 hrs", icon: Clock, color: "text-orange-500" },
+    { title: "Avg Resolution", value: tasks.length > 0 ? "3.8 hrs" : "0 hrs", icon: Clock, color: "text-orange-500" },
     { title: "Staff Online", value: MOCK_USERS.length, icon: Users, color: "text-purple-500" },
   ];
 

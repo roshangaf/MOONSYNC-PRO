@@ -75,6 +75,7 @@ export default function CompanyLoginPage() {
         localStorage.removeItem('moonsync_company_profile');
         localStorage.removeItem('moonsync_dept_keys');
         localStorage.removeItem('performa_user');
+        localStorage.removeItem('moonsync_was_reset'); // Clear reset flag for new company
         
         toast({
           title: "New Company Context Detected",
