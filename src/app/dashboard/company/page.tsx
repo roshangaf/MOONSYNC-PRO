@@ -7,9 +7,26 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
-import { Building2, Globe, Mail, MapPin, Phone, ShieldCheck, Edit2, Save, X, Loader2, Key, ShieldAlert } from "lucide-react"
+import { 
+  Building2, 
+  Globe, 
+  Mail, 
+  MapPin, 
+  Phone, 
+  ShieldCheck, 
+  Edit2, 
+  Save, 
+  X, 
+  Loader2, 
+  Key, 
+  ShieldAlert,
+  Download,
+  Database,
+  FileSpreadsheet
+} from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { Role } from "@/lib/types"
+import * as XLSX from 'xlsx'
 
 const DEFAULT_DEPT_KEYS: Record<Role, string> = {
   'Admin': 'SUPER-ADMIN-2024',
@@ -22,6 +39,7 @@ export default function CompanyPage() {
   const { toast } = useToast()
   const [isEditing, setIsEditing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [isBackingUp, setIsBackingUp] = useState(false)
   
   const [companyData, setCompanyData] = useState({
     name: "MoonSync Pro Terminal Systems",
@@ -62,7 +80,6 @@ export default function CompanyPage() {
 
   const handleSave = () => {
     setIsSaving(true)
-    // Simulate API delay
     setTimeout(() => {
       setCompanyData({ ...tempData })
       setDeptKeys({ ...tempDeptKeys })
@@ -77,6 +94,52 @@ export default function CompanyPage() {
     }, 1000)
   }
 
+  const handleBackup = () => {
+    setIsBackingUp(true);
+    
+    setTimeout(() => {
+      try {
+        const tasks = JSON.parse(localStorage.getItem('moonsync_tasks') || '[]');
+        const bills = JSON.parse(localStorage.getItem('moonsync_bills') || '[]');
+        const attendance = JSON.parse(localStorage.getItem('moonsync_attendance') || '[]');
+
+        const wb = XLSX.utils.book_new();
+
+        // Tasks Sheet
+        const wsTasks = XLSX.utils.json_to_sheet(tasks);
+        XLSX.utils.book_append_sheet(wb, wsTasks, "Tasks");
+
+        // Bills Sheet
+        const wsBills = XLSX.utils.json_to_sheet(bills.map((b: any) => ({
+          ...b,
+          items: JSON.stringify(b.items) // Flatten items for sheet view
+        })));
+        XLSX.utils.book_append_sheet(wb, wsBills, "Financials");
+
+        // Attendance Sheet
+        const wsAttendance = XLSX.utils.json_to_sheet(attendance);
+        XLSX.utils.book_append_sheet(wb, wsAttendance, "Attendance");
+
+        // Export file
+        const fileName = `MoonSync_Backup_${new Date().toISOString().split('T')[0]}.xlsx`;
+        XLSX.writeFile(wb, fileName);
+
+        toast({
+          title: "System Backup Successful",
+          description: `Full organization data exported to ${fileName}.`,
+        });
+      } catch (error) {
+        toast({
+          title: "Backup Error",
+          description: "Failed to extract local data for backup.",
+          variant: "destructive"
+        });
+      } finally {
+        setIsBackingUp(false);
+      }
+    }, 1500);
+  }
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -85,10 +148,16 @@ export default function CompanyPage() {
           <p className="text-muted-foreground">Global administration of corporate identity and departmental security protocols.</p>
         </div>
         {!isEditing ? (
-          <Button onClick={handleEdit} className="bg-primary font-bold uppercase text-xs tracking-widest h-10 shadow-lg shadow-primary/20">
-            <Edit2 className="mr-2 h-4 w-4" />
-            Edit Profile & Security
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={handleBackup} disabled={isBackingUp} className="font-bold uppercase text-xs tracking-widest h-10 border-slate-300">
+              {isBackingUp ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+              Backup System (.xlsx)
+            </Button>
+            <Button onClick={handleEdit} className="bg-primary font-bold uppercase text-xs tracking-widest h-10 shadow-lg shadow-primary/20">
+              <Edit2 className="mr-2 h-4 w-4" />
+              Edit Profile & Security
+            </Button>
+          </div>
         ) : (
           <div className="flex items-center gap-2">
             <Button variant="outline" onClick={handleCancel} className="uppercase font-bold text-xs tracking-widest h-10 border-slate-300">
@@ -202,62 +271,91 @@ export default function CompanyPage() {
         </Card>
       </div>
 
-      <Card className="shadow-lg border-none overflow-hidden bg-white">
-        <div className="h-1.5 bg-slate-900 w-full" />
-        <CardHeader>
-          <CardTitle className="text-lg font-black uppercase tracking-widest">Official Contact Nodes</CardTitle>
-          <CardDescription>Headquarters and administrative communication endpoints.</CardDescription>
-        </CardHeader>
-        <CardContent className="grid md:grid-cols-3 gap-6">
-          <div className="space-y-2">
-            <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Registered Office</Label>
-            {isEditing ? (
-              <Input 
-                value={tempData.address} 
-                onChange={(e) => setTempData({...tempData, address: e.target.value})}
-                className="bg-slate-50 border-slate-200 font-bold h-12 rounded-xl"
-              />
-            ) : (
-              <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-xl border border-slate-100">
-                <MapPin className="h-4 w-4 text-slate-400" />
-                <p className="text-sm font-bold text-slate-900">{companyData.address}</p>
-              </div>
-            )}
-          </div>
+      <div className="grid gap-6 md:grid-cols-3">
+        <Card className="md:col-span-2 shadow-lg border-none overflow-hidden bg-white">
+          <div className="h-1.5 bg-slate-900 w-full" />
+          <CardHeader>
+            <CardTitle className="text-lg font-black uppercase tracking-widest">Official Contact Nodes</CardTitle>
+            <CardDescription>Headquarters and administrative communication endpoints.</CardDescription>
+          </CardHeader>
+          <CardContent className="grid md:grid-cols-3 gap-6">
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Registered Office</Label>
+              {isEditing ? (
+                <Input 
+                  value={tempData.address} 
+                  onChange={(e) => setTempData({...tempData, address: e.target.value})}
+                  className="bg-slate-50 border-slate-200 font-bold h-12 rounded-xl"
+                />
+              ) : (
+                <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-xl border border-slate-100">
+                  <MapPin className="h-4 w-4 text-slate-400" />
+                  <p className="text-sm font-bold text-slate-900">{companyData.address}</p>
+                </div>
+              )}
+            </div>
 
-          <div className="space-y-2">
-            <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Support Line</Label>
-            {isEditing ? (
-              <Input 
-                value={tempData.phone} 
-                onChange={(e) => setTempData({...tempData, phone: e.target.value})}
-                className="bg-slate-50 border-slate-200 font-bold h-12 rounded-xl"
-              />
-            ) : (
-              <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-xl border border-slate-100">
-                <Phone className="h-4 w-4 text-slate-400" />
-                <p className="text-sm font-bold text-slate-900">{companyData.phone}</p>
-              </div>
-            )}
-          </div>
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Support Line</Label>
+              {isEditing ? (
+                <Input 
+                  value={tempData.phone} 
+                  onChange={(e) => setTempData({...tempData, phone: e.target.value})}
+                  className="bg-slate-50 border-slate-200 font-bold h-12 rounded-xl"
+                />
+              ) : (
+                <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-xl border border-slate-100">
+                  <Phone className="h-4 w-4 text-slate-400" />
+                  <p className="text-sm font-bold text-slate-900">{companyData.phone}</p>
+                </div>
+              )}
+            </div>
 
-          <div className="space-y-2">
-            <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Admin Email</Label>
-            {isEditing ? (
-              <Input 
-                value={tempData.email} 
-                onChange={(e) => setTempData({...tempData, email: e.target.value})}
-                className="bg-slate-50 border-slate-200 font-bold h-12 rounded-xl"
-              />
-            ) : (
-              <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-xl border border-slate-100">
-                <Mail className="h-4 w-4 text-slate-400" />
-                <p className="text-sm font-bold text-slate-900">{companyData.email}</p>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Admin Email</Label>
+              {isEditing ? (
+                <Input 
+                  value={tempData.email} 
+                  onChange={(e) => setTempData({...tempData, email: e.target.value})}
+                  className="bg-slate-50 border-slate-200 font-bold h-12 rounded-xl"
+                />
+              ) : (
+                <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-xl border border-slate-100">
+                  <Mail className="h-4 w-4 text-slate-400" />
+                  <p className="text-sm font-bold text-slate-900">{companyData.email}</p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-lg border-none overflow-hidden bg-slate-900 text-white">
+          <CardHeader>
+            <CardTitle className="text-lg font-black uppercase tracking-widest flex items-center gap-2">
+              <Database className="h-5 w-5 text-primary" />
+              Data Integrity
+            </CardTitle>
+            <CardDescription className="text-slate-400 text-xs">Offline archival and disaster recovery.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-[11px] leading-relaxed text-slate-300">
+              Generate an immutable snapshot of all terminal data, including task ledgers, financial records, and personnel logs in a structured Excel format.
+            </p>
+            <Button 
+              className="w-full bg-primary hover:bg-primary/90 font-black uppercase text-[10px] tracking-[0.2em] h-12"
+              onClick={handleBackup}
+              disabled={isBackingUp}
+            >
+              {isBackingUp ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <FileSpreadsheet className="mr-2 h-4 w-4" />
+              )}
+              {isBackingUp ? "Compiling..." : "Full System Export"}
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }
