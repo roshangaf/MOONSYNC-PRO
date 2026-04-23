@@ -5,7 +5,7 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useAuth } from "@/components/auth-context"
 import { Briefcase, CheckCircle2, Clock, ListTodo, Users, TrendingUp, Inbox } from "lucide-react"
-import { MOCK_TASKS, MOCK_USERS } from "@/lib/store"
+import { MOCK_USERS } from "@/lib/store"
 import { Task } from "@/lib/types"
 
 export default function DashboardPage() {
@@ -16,16 +16,11 @@ export default function DashboardPage() {
   useEffect(() => {
     setMounted(true);
     const savedTasks = localStorage.getItem('moonsync_tasks');
-    const wasReset = localStorage.getItem('moonsync_was_reset') === 'true';
-
+    
     if (savedTasks) {
       setTasks(JSON.parse(savedTasks));
-    } else if (!wasReset) {
-      // Only initialize with mocks if never reset and no data exists
-      setTasks(MOCK_TASKS);
-      localStorage.setItem('moonsync_tasks', JSON.stringify(MOCK_TASKS));
     } else {
-      // Explicitly empty after reset
+      // Start with empty ledger
       setTasks([]);
     }
   }, []);

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { MOCK_TASKS, MOCK_USERS } from "@/lib/store"
+import { MOCK_USERS } from "@/lib/store"
 import { useAuth } from "@/components/auth-context"
 import { Briefcase, Filter, Plus, Search, Download, Calendar, User, Phone, MapPin, Info, Trash2 } from "lucide-react"
 import Link from "next/link"
@@ -36,13 +36,9 @@ export default function TasksPage() {
   useEffect(() => {
     setMounted(true);
     const savedTasks = localStorage.getItem('moonsync_tasks');
-    const wasReset = localStorage.getItem('moonsync_was_reset') === 'true';
-
+    
     if (savedTasks) {
       setTasks(JSON.parse(savedTasks));
-    } else if (!wasReset) {
-      setTasks(MOCK_TASKS);
-      localStorage.setItem('moonsync_tasks', JSON.stringify(MOCK_TASKS));
     } else {
       setTasks([]);
     }

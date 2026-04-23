@@ -21,11 +21,7 @@ import {
 export default function FinancePage() {
   const { toast } = useToast()
   const [bills, setBills] = useState<Bill[]>([])
-  const [legacyTransactions, setLegacyTransactions] = useState([
-    { id: 'TX-801', client: 'CloudTech Solutions', service: 'Infra Deployment', amount: 85000, status: 'Paid', date: '2024-03-01' },
-    { id: 'TX-802', client: 'Global Systems', service: 'Security Audit', amount: 42000, status: 'Pending', date: '2024-03-05' },
-    { id: 'TX-803', client: 'Vertex Media', service: 'Hardware Sync', amount: 12500, status: 'Overdue', date: '2024-02-15' },
-  ]);
+  const [legacyTransactions, setLegacyTransactions] = useState([]);
 
   useEffect(() => {
     const savedBills = localStorage.getItem('moonsync_bills');
@@ -35,7 +31,8 @@ export default function FinancePage() {
   }, []);
 
   const updateStatus = (id: string, newStatus: string) => {
-    setLegacyTransactions(prev => prev.map(tx => tx.id === id ? { ...tx, status: newStatus } : tx));
+    // Only applies to legacy transactions if any
+    setLegacyTransactions(prev => prev.map((tx: any) => tx.id === id ? { ...tx, status: newStatus } : tx));
     toast({
       title: "Ledger Update Executed",
       description: `Ref: ${id} status updated to ${newStatus.toUpperCase()}. Financial metrics adjusted in NRS.`,
@@ -64,7 +61,7 @@ export default function FinancePage() {
   };
 
   const deleteLegacyTransaction = (id: string) => {
-    setLegacyTransactions(prev => prev.filter(tx => tx.id !== id));
+    setLegacyTransactions(prev => prev.filter((tx: any) => tx.id !== id));
     toast({
       title: "Record Deleted",
       description: `Legacy transaction ${id} has been deleted.`,
@@ -73,14 +70,14 @@ export default function FinancePage() {
   };
 
   const activeBills = bills.filter(b => b.status !== 'Void');
-  const activeLegacy = legacyTransactions.filter(tx => tx.status !== 'Void');
+  const activeLegacy = legacyTransactions.filter((tx: any) => tx.status !== 'Void');
 
   const totalRevenue = activeBills.reduce((sum, bill) => sum + (bill.totalAmount || 0), 0) + 
-                       activeLegacy.reduce((sum, tx) => sum + tx.amount, 0);
+                       activeLegacy.reduce((sum, tx: any) => sum + tx.amount, 0);
 
   const outstandingValue = activeLegacy
-    .filter(tx => tx.status === 'Pending' || tx.status === 'Overdue')
-    .reduce((sum, tx) => sum + tx.amount, 0);
+    .filter((tx: any) => tx.status === 'Pending' || tx.status === 'Overdue')
+    .reduce((sum, tx: any) => sum + tx.amount, 0);
 
   return (
     <div className="space-y-6">
@@ -135,7 +132,7 @@ export default function FinancePage() {
           <CardContent>
             <div className="text-3xl font-black text-slate-900 tracking-tighter">NRS {outstandingValue.toLocaleString()}.00</div>
             <div className="flex items-center text-xs text-orange-500 font-black mt-2 uppercase tracking-widest">
-              {activeLegacy.filter(tx => tx.status === 'Pending' || tx.status === 'Overdue').length} Pending Documents
+              {activeLegacy.length + bills.filter(b => b.status === 'Pending').length} Pending Documents
             </div>
           </CardContent>
         </Card>
@@ -220,7 +217,7 @@ export default function FinancePage() {
               ))}
               
               {/* Legacy Logs */}
-              {legacyTransactions.map((tx) => (
+              {legacyTransactions.map((tx: any) => (
                 <TableRow key={tx.id} className={`hover:bg-slate-50 transition-colors ${tx.status === 'Void' ? 'opacity-40 grayscale' : ''}`}>
                   <TableCell>
                     <div className="flex flex-col">
