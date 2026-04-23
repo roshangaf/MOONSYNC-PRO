@@ -22,11 +22,24 @@ import {
   ShieldAlert,
   Download,
   Database,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Trash2,
+  AlertTriangle
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { Role } from "@/lib/types"
 import * as XLSX from 'xlsx'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 const DEFAULT_DEPT_KEYS: Record<Role, string> = {
   'Admin': 'SUPER-ADMIN-2024',
@@ -140,8 +153,29 @@ export default function CompanyPage() {
     }, 1500);
   }
 
+  const handleResetInfrastructure = () => {
+    localStorage.removeItem('moonsync_tasks');
+    localStorage.removeItem('moonsync_bills');
+    localStorage.removeItem('moonsync_attendance');
+    localStorage.removeItem('moonsync_company_profile');
+    localStorage.removeItem('moonsync_dept_keys');
+    localStorage.removeItem('company_verified');
+    localStorage.removeItem('performa_user');
+    localStorage.removeItem('moonsync_last_company');
+    
+    toast({
+      title: "Infrastructure Purged",
+      description: "All organizational records, ledgers, and profile metadata have been permanently removed.",
+      variant: "destructive",
+    });
+
+    setTimeout(() => {
+      window.location.href = '/login';
+    }, 1000);
+  }
+
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in pb-20">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1">
           <h1 className="text-3xl font-bold tracking-tight text-primary uppercase">Company Control Center</h1>
@@ -272,7 +306,7 @@ export default function CompanyPage() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-3">
-        <Card className="md:col-span-2 shadow-lg border-none overflow-hidden bg-white">
+        <Card className="md:col-span-2 shadow-lg border-none overflow-hidden bg-white h-full">
           <div className="h-1.5 bg-slate-900 w-full" />
           <CardHeader>
             <CardTitle className="text-lg font-black uppercase tracking-widest">Official Contact Nodes</CardTitle>
@@ -329,32 +363,74 @@ export default function CompanyPage() {
           </CardContent>
         </Card>
 
-        <Card className="shadow-lg border-none overflow-hidden bg-slate-900 text-white">
-          <CardHeader>
-            <CardTitle className="text-lg font-black uppercase tracking-widest flex items-center gap-2">
-              <Database className="h-5 w-5 text-primary" />
-              Data Integrity
-            </CardTitle>
-            <CardDescription className="text-slate-400 text-xs">Offline archival and disaster recovery.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-[11px] leading-relaxed text-slate-300">
-              Generate an immutable snapshot of all terminal data, including task ledgers, financial records, and personnel logs in a structured Excel format.
-            </p>
-            <Button 
-              className="w-full bg-primary hover:bg-primary/90 font-black uppercase text-[10px] tracking-[0.2em] h-12"
-              onClick={handleBackup}
-              disabled={isBackingUp}
-            >
-              {isBackingUp ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <FileSpreadsheet className="mr-2 h-4 w-4" />
-              )}
-              {isBackingUp ? "Compiling..." : "Full System Export"}
-            </Button>
-          </CardContent>
-        </Card>
+        <div className="space-y-6">
+          <Card className="shadow-lg border-none overflow-hidden bg-slate-900 text-white">
+            <CardHeader>
+              <CardTitle className="text-lg font-black uppercase tracking-widest flex items-center gap-2">
+                <Database className="h-5 w-5 text-primary" />
+                Data Integrity
+              </CardTitle>
+              <CardDescription className="text-slate-400 text-xs">Offline archival and disaster recovery.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-[11px] leading-relaxed text-slate-300">
+                Generate an immutable snapshot of all terminal data, including task ledgers, financial records, and personnel logs.
+              </p>
+              <Button 
+                className="w-full bg-primary hover:bg-primary/90 font-black uppercase text-[10px] tracking-[0.2em] h-12"
+                onClick={handleBackup}
+                disabled={isBackingUp}
+              >
+                {isBackingUp ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <FileSpreadsheet className="mr-2 h-4 w-4" />
+                )}
+                {isBackingUp ? "Compiling..." : "Full System Export"}
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-lg border-none overflow-hidden bg-destructive/5 border border-destructive/20">
+            <CardHeader>
+              <CardTitle className="text-lg font-black uppercase tracking-widest flex items-center gap-2 text-destructive">
+                <AlertTriangle className="h-5 w-5" />
+                Danger Zone
+              </CardTitle>
+              <CardDescription className="text-destructive/60 text-xs font-medium">Irreversible administrative actions.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-[11px] leading-relaxed text-destructive/80 font-bold">
+                Executing a factory reset will permanently purge all tasks, financial ledgers, and organizational identity metadata.
+              </p>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" className="w-full font-black uppercase text-[10px] tracking-[0.2em] h-12">
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Reset Infrastructure
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle className="font-black uppercase tracking-widest text-destructive">Confirm Infrastructure Purge?</AlertDialogTitle>
+                    <AlertDialogDescription className="font-medium">
+                      This action is irreversible. All task records (jobs done), financial documents, and organizational settings will be permanently deleted from the terminal.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel className="font-bold uppercase text-xs">Abort</AlertDialogCancel>
+                    <AlertDialogAction 
+                      onClick={handleResetInfrastructure}
+                      className="bg-destructive hover:bg-destructive/90 font-bold uppercase text-xs"
+                    >
+                      Confirm Factory Reset
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   )
