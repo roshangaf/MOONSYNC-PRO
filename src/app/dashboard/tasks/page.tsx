@@ -36,11 +36,15 @@ export default function TasksPage() {
   useEffect(() => {
     setMounted(true);
     const savedTasks = localStorage.getItem('moonsync_tasks');
+    const wasReset = localStorage.getItem('moonsync_was_reset') === 'true';
+
     if (savedTasks) {
       setTasks(JSON.parse(savedTasks));
-    } else {
+    } else if (!wasReset) {
       setTasks(MOCK_TASKS);
       localStorage.setItem('moonsync_tasks', JSON.stringify(MOCK_TASKS));
+    } else {
+      setTasks([]);
     }
   }, []);
 
@@ -128,17 +132,17 @@ export default function TasksPage() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1">
-          <h1 className="text-3xl font-bold tracking-tight text-primary uppercase">Job & Task Portal</h1>
-          <p className="text-muted-foreground">Track and manage service requests across all departments with precise timestamps.</p>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-primary uppercase">Job & Task Portal</h1>
+          <p className="text-xs md:text-sm text-muted-foreground">Track and manage service requests across all departments.</p>
         </div>
         <div className="flex items-center gap-3">
           {user?.role === 'Admin' && (
-            <Button variant="outline" onClick={handleDownloadReport} className="border-primary text-primary hover:bg-primary/5 font-bold uppercase text-[10px] tracking-widest">
+            <Button variant="outline" onClick={handleDownloadReport} className="hidden sm:flex border-primary text-primary hover:bg-primary/5 font-bold uppercase text-[10px] tracking-widest">
               <Download className="mr-2 h-4 w-4" />
-              Download Audit Report
+              Audit Report
             </Button>
           )}
-          <Button asChild className="bg-accent hover:bg-accent/90 text-white shadow-lg shadow-accent/20 font-bold uppercase text-[10px] tracking-widest h-10">
+          <Button asChild className="flex-1 sm:flex-none bg-accent hover:bg-accent/90 text-white shadow-lg shadow-accent/20 font-bold uppercase text-[10px] tracking-widest h-10">
             <Link href="/dashboard/tasks/new">
               <Plus className="mr-2 h-4 w-4" />
               Add Job
@@ -148,24 +152,24 @@ export default function TasksPage() {
       </div>
 
       <Tabs defaultValue="ledger" className="w-full space-y-6">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-          <TabsList className="bg-muted/50 p-1">
-            <TabsTrigger value="ledger" className="font-bold uppercase text-[10px] tracking-widest">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+          <TabsList className="bg-muted/50 p-1 w-full sm:w-auto overflow-x-auto justify-start">
+            <TabsTrigger value="ledger" className="flex-1 sm:flex-none font-bold uppercase text-[10px] tracking-widest">
               <Briefcase className="h-3 w-3 mr-2" />
-              Task Ledger
+              Ledger
             </TabsTrigger>
-            <TabsTrigger value="details" className="font-bold uppercase text-[10px] tracking-widest">
+            <TabsTrigger value="details" className="flex-1 sm:flex-none font-bold uppercase text-[10px] tracking-widest">
               <Info className="h-3 w-3 mr-2" />
-              Customer Details
+              Directory
             </TabsTrigger>
           </TabsList>
 
-          <div className="flex items-center gap-4 w-full md:w-auto">
-            <div className="relative flex-1 md:w-64">
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            <div className="relative flex-1 sm:w-64">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search portal..."
-                className="pl-8 bg-white"
+                placeholder="Search..."
+                className="pl-8 bg-white h-10 text-xs"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -173,12 +177,12 @@ export default function TasksPage() {
             
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon" className={filterPriority.length > 0 || filterStatus.length > 0 ? "border-accent text-accent" : ""}>
+                <Button variant="outline" size="icon" className={filterPriority.length > 0 || filterStatus.length > 0 ? "border-accent text-accent h-10 w-10" : "h-10 w-10"}>
                   <Filter className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>Filter Tasks</DropdownMenuLabel>
+                <DropdownMenuLabel className="text-[10px] uppercase font-black">Filter Tasks</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <div className="p-2">
                   <p className="text-[10px] font-bold uppercase text-muted-foreground mb-2">Priority</p>
@@ -187,6 +191,7 @@ export default function TasksPage() {
                       key={p}
                       checked={filterPriority.includes(p)}
                       onCheckedChange={() => togglePriorityFilter(p)}
+                      className="text-xs uppercase font-bold"
                     >
                       {p}
                     </DropdownMenuCheckboxItem>
@@ -200,6 +205,7 @@ export default function TasksPage() {
                       key={s}
                       checked={filterStatus.includes(s)}
                       onCheckedChange={() => toggleStatusFilter(s)}
+                      className="text-xs uppercase font-bold"
                     >
                       {s}
                     </DropdownMenuCheckboxItem>
@@ -213,75 +219,68 @@ export default function TasksPage() {
         <TabsContent value="ledger">
           <Card className="shadow-xl border-none overflow-hidden bg-white">
             <CardContent className="p-0">
-              <Table>
-                <TableHeader className="bg-muted/50">
-                  <TableRow>
-                    <TableHead className="font-bold text-xs uppercase">Task Title / Job</TableHead>
-                    <TableHead className="font-bold text-xs uppercase">Listed At</TableHead>
-                    <TableHead className="font-bold text-xs uppercase">Status</TableHead>
-                    <TableHead className="font-bold text-xs uppercase">Priority</TableHead>
-                    <TableHead className="font-bold text-xs uppercase">Listed By</TableHead>
-                    <TableHead className="text-right font-bold text-xs uppercase">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredTasks.map((task) => (
-                    <TableRow key={task.id} className="hover:bg-primary/5 transition-colors">
-                      <TableCell>
-                        <div className="flex flex-col">
-                          <span className="font-bold text-sm text-slate-900">{task.title}</span>
-                          <span className="text-xs text-muted-foreground line-clamp-1">Client: {task.contactName || 'Unspecified'}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-mono">
-                          <Calendar className="h-3 w-3" />
-                          {formatDate(task.createdAt)}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={getStatusColor(task.status)} className="rounded-md font-bold uppercase text-[10px]">
-                          {task.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={getPriorityColor(task.priority)} className="rounded-md font-bold uppercase text-[10px]">
-                          {task.priority}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary">
-                            {getStaffName(task.createdBy).charAt(0)}
-                          </div>
-                          <span className="text-xs font-semibold">{getStaffName(task.createdBy)}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button variant="ghost" size="sm" asChild className="text-primary font-bold hover:bg-primary/5">
-                            <Link href={`/dashboard/tasks/${task.id}`}>Manage</Link>
-                          </Button>
-                          {user?.role === 'Admin' && (
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                              onClick={() => handleDeleteTask(task.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader className="bg-muted/50">
+                    <TableRow>
+                      <TableHead className="font-bold text-[10px] uppercase min-w-[150px]">Task / Job</TableHead>
+                      <TableHead className="font-bold text-[10px] uppercase hidden md:table-cell">Listed At</TableHead>
+                      <TableHead className="font-bold text-[10px] uppercase">Status</TableHead>
+                      <TableHead className="font-bold text-[10px] uppercase hidden sm:table-cell">Priority</TableHead>
+                      <TableHead className="text-right font-bold text-[10px] uppercase">Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredTasks.map((task) => (
+                      <TableRow key={task.id} className="hover:bg-primary/5 transition-colors">
+                        <TableCell>
+                          <div className="flex flex-col">
+                            <span className="font-bold text-xs text-slate-900 line-clamp-1">{task.title}</span>
+                            <span className="text-[10px] text-muted-foreground truncate">Client: {task.contactName || 'Unspecified'}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground font-mono">
+                            <Calendar className="h-3 w-3" />
+                            {formatDate(task.createdAt)}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={getStatusColor(task.status)} className="rounded-md font-bold uppercase text-[9px] px-2 py-0">
+                            {task.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="hidden sm:table-cell">
+                          <Badge variant={getPriorityColor(task.priority)} className="rounded-md font-bold uppercase text-[9px] px-2 py-0">
+                            {task.priority}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-1">
+                            <Button variant="ghost" size="sm" asChild className="h-8 text-[10px] text-primary font-bold hover:bg-primary/5 uppercase tracking-tighter">
+                              <Link href={`/dashboard/tasks/${task.id}`}>Manage</Link>
+                            </Button>
+                            {user?.role === 'Admin' && (
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                                onClick={() => handleDeleteTask(task.id)}
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
               {filteredTasks.length === 0 && (
-                <div className="p-16 text-center text-muted-foreground italic flex flex-col items-center gap-2">
-                  <Briefcase className="h-8 w-8 opacity-20" />
-                  No jobs found matching your criteria.
+                <div className="p-10 text-center text-muted-foreground italic flex flex-col items-center gap-2">
+                  <Briefcase className="h-6 w-6 opacity-20" />
+                  <p className="text-[10px] uppercase font-black tracking-widest">No entries found.</p>
                 </div>
               )}
             </CardContent>
@@ -290,58 +289,60 @@ export default function TasksPage() {
 
         <TabsContent value="details">
           <Card className="shadow-xl border-none overflow-hidden bg-white">
-            <CardHeader className="bg-slate-50 border-b">
-              <CardTitle className="text-lg font-black uppercase tracking-widest">Customer Directory</CardTitle>
+            <CardHeader className="bg-slate-50 border-b py-4">
+              <CardTitle className="text-sm font-black uppercase tracking-widest">Personnel & Customer Directory</CardTitle>
             </CardHeader>
             <CardContent className="p-0">
-              <Table>
-                <TableHeader className="bg-muted/50">
-                  <TableRow>
-                    <TableHead className="font-bold text-xs uppercase">Client Identity</TableHead>
-                    <TableHead className="font-bold text-xs uppercase">Contact Portal</TableHead>
-                    <TableHead className="font-bold text-xs uppercase">Primary Service Address</TableHead>
-                    <TableHead className="text-right font-bold text-xs uppercase">Active Task Count</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {uniqueCustomers.map((customer, idx) => (
-                    <TableRow key={idx} className="hover:bg-primary/5">
-                      <TableCell className="font-black text-sm text-slate-800">
-                        <div className="flex items-center gap-3">
-                          <div className="h-8 w-8 rounded-xl bg-accent/10 flex items-center justify-center text-accent">
-                            <User className="h-4 w-4" />
-                          </div>
-                          {customer.name}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2 text-xs font-medium text-slate-600">
-                          <Phone className="h-3 w-3 text-primary" />
-                          {customer.phone}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2 text-xs font-medium text-slate-600">
-                          <MapPin className="h-3 w-3 text-primary" />
-                          {customer.address}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Badge variant="secondary" className="font-black">
-                          {customer.tasks.length} Job(s)
-                        </Badge>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  {uniqueCustomers.length === 0 && (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader className="bg-muted/50">
                     <TableRow>
-                      <TableCell colSpan={4} className="p-16 text-center text-muted-foreground italic">
-                        No customer details indexed in current task set.
-                      </TableCell>
+                      <TableHead className="font-bold text-[10px] uppercase min-w-[120px]">Client Identity</TableHead>
+                      <TableHead className="font-bold text-[10px] uppercase hidden sm:table-cell">Contact</TableHead>
+                      <TableHead className="font-bold text-[10px] uppercase hidden md:table-cell">Address</TableHead>
+                      <TableHead className="text-right font-bold text-[10px] uppercase">Jobs</TableHead>
                     </TableRow>
-                  )}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {uniqueCustomers.map((customer, idx) => (
+                      <TableRow key={idx} className="hover:bg-primary/5">
+                        <TableCell className="font-black text-xs text-slate-800">
+                          <div className="flex items-center gap-2">
+                            <div className="h-6 w-6 rounded-lg bg-accent/10 flex items-center justify-center text-accent shrink-0">
+                              <User className="h-3 w-3" />
+                            </div>
+                            <span className="truncate">{customer.name}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="hidden sm:table-cell">
+                          <div className="flex items-center gap-1.5 text-[10px] font-medium text-slate-600">
+                            <Phone className="h-3 w-3 text-primary shrink-0" />
+                            {customer.phone}
+                          </div>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          <div className="flex items-center gap-1.5 text-[10px] font-medium text-slate-600">
+                            <MapPin className="h-3 w-3 text-primary shrink-0" />
+                            <span className="truncate max-w-[150px]">{customer.address}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Badge variant="secondary" className="font-black text-[9px] px-2">
+                            {customer.tasks.length}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {uniqueCustomers.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={4} className="p-10 text-center text-muted-foreground italic">
+                          <p className="text-[10px] uppercase font-black tracking-widest">No directory entries.</p>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

@@ -21,14 +21,11 @@ export default function DashboardPage() {
     if (savedTasks) {
       setTasks(JSON.parse(savedTasks));
     } else if (!wasReset) {
-      // Only initialize with mocks if not intentionally reset
-      const companyVerified = localStorage.getItem('company_verified');
-      if (companyVerified === 'true') {
-         setTasks(MOCK_TASKS);
-         localStorage.setItem('moonsync_tasks', JSON.stringify(MOCK_TASKS));
-      }
+      // Only initialize with mocks if never reset and no data exists
+      setTasks(MOCK_TASKS);
+      localStorage.setItem('moonsync_tasks', JSON.stringify(MOCK_TASKS));
     } else {
-      // If was reset, start with empty task list
+      // Explicitly empty after reset
       setTasks([]);
     }
   }, []);
@@ -52,22 +49,22 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-1">
-        <h1 className="text-3xl font-bold tracking-tight text-primary uppercase">Welcome, {user?.name}</h1>
-        <p className="text-muted-foreground">Monitoring organizational throughput in the <span className="font-bold text-primary">{user?.department}</span> sector.</p>
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-primary uppercase">Welcome, {user?.name}</h1>
+        <p className="text-xs md:text-sm text-muted-foreground">Monitoring organizational throughput in the <span className="font-bold text-primary">{user?.department}</span> sector.</p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
           <Card key={stat.title} className="border-none shadow-xl bg-white overflow-hidden">
             <div className={`h-1 w-full ${stat.color.replace('text-', 'bg-')}`} />
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{stat.title}</CardTitle>
-              <stat.icon className={`h-4 w-4 ${stat.color}`} />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 md:p-6 pb-2">
+              <CardTitle className="text-[8px] md:text-[10px] font-black uppercase tracking-widest text-muted-foreground">{stat.title}</CardTitle>
+              <stat.icon className={`h-3 w-3 md:h-4 md:w-4 ${stat.color}`} />
             </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-black text-slate-900 tracking-tighter">{stat.value}</div>
-              <p className="text-[9px] font-bold text-muted-foreground uppercase mt-1">
-                Live Terminal Sync
+            <CardContent className="p-3 md:p-6 pt-0">
+              <div className="text-xl md:text-3xl font-black text-slate-900 tracking-tighter">{stat.value}</div>
+              <p className="text-[7px] md:text-[9px] font-bold text-muted-foreground uppercase mt-1">
+                Live Sync
               </p>
             </CardContent>
           </Card>
@@ -75,7 +72,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="lg:col-span-4 border-none shadow-xl bg-white">
+        <Card className="lg:col-span-4 border-none shadow-xl bg-white hidden sm:block">
           <CardHeader>
             <CardTitle className="text-sm font-black uppercase tracking-widest">Departmental Activity Metrics</CardTitle>
           </CardHeader>
@@ -92,31 +89,31 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
         
-        <Card className="lg:col-span-3 border-none shadow-xl bg-white">
+        <Card className="lg:col-span-3 md:col-span-2 border-none shadow-xl bg-white">
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-sm font-black uppercase tracking-widest">Recent Job Entries</CardTitle>
+            <CardTitle className="text-xs md:text-sm font-black uppercase tracking-widest">Recent Job Entries</CardTitle>
             <Briefcase className="h-4 w-4 text-primary opacity-20" />
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
+            <div className="space-y-3 md:space-y-4">
               {recentTasks.map(task => (
-                <div key={task.id} className="group flex items-center gap-4 p-3 rounded-xl hover:bg-primary/5 transition-all border border-transparent hover:border-primary/10">
-                  <div className={`w-1.5 h-10 rounded-full shrink-0 ${task.priority === 'High' || task.priority === 'Critical' ? 'bg-destructive shadow-[0_0_8px_rgba(239,68,68,0.4)]' : 'bg-primary'}`} />
+                <div key={task.id} className="group flex items-center gap-3 md:gap-4 p-2 md:p-3 rounded-xl hover:bg-primary/5 transition-all border border-transparent hover:border-primary/10">
+                  <div className={`w-1 h-8 md:w-1.5 md:h-10 rounded-full shrink-0 ${task.priority === 'High' || task.priority === 'Critical' ? 'bg-destructive shadow-[0_0_8px_rgba(239,68,68,0.4)]' : 'bg-primary'}`} />
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-black text-slate-900 truncate uppercase tracking-tight group-hover:text-primary transition-colors">{task.title}</p>
+                    <p className="text-[10px] md:text-xs font-black text-slate-900 truncate uppercase tracking-tight group-hover:text-primary transition-colors">{task.title}</p>
                     <div className="flex items-center gap-2 mt-0.5">
-                       <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 bg-slate-100 rounded text-slate-500 tracking-tighter">{task.status}</span>
-                       <span className="text-[9px] text-slate-400 font-medium">Ref: {task.id}</span>
+                       <span className="text-[8px] font-bold uppercase px-1.5 py-0.5 bg-slate-100 rounded text-slate-500 tracking-tighter">{task.status}</span>
+                       <span className="text-[8px] text-slate-400 font-medium hidden sm:inline">Ref: {task.id}</span>
                     </div>
                   </div>
-                  <div className="text-[10px] font-mono font-bold text-slate-400 whitespace-nowrap">
+                  <div className="text-[8px] md:text-[10px] font-mono font-bold text-slate-400 whitespace-nowrap">
                     {new Date(task.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </div>
                 </div>
               ))}
               {recentTasks.length === 0 && (
-                <div className="py-20 text-center space-y-4">
-                  <Inbox className="h-10 w-10 text-slate-200 mx-auto" />
+                <div className="py-10 md:py-20 text-center space-y-4">
+                  <Inbox className="h-8 w-8 text-slate-200 mx-auto" />
                   <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Ledger Empty</p>
                 </div>
               )}
