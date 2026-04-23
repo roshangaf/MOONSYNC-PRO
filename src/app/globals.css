@@ -29,6 +29,16 @@
     --chart-3: 225 30% 95%;
     --chart-4: 228 20% 40%;
     --chart-5: 200 60% 40%;
+    
+    /* Sidebar Variables */
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 228 60% 10%;
+    --sidebar-primary: 228 60% 40%;
+    --sidebar-primary-foreground: 210 40% 98%;
+    --sidebar-accent: 225 20% 90%;
+    --sidebar-accent-foreground: 228 60% 10%;
+    --sidebar-border: 225 20% 85%;
+    --sidebar-ring: 228 60% 40%;
   }
 
   .dark {
@@ -51,6 +61,16 @@
     --border: 228 40% 20%;
     --input: 228 40% 20%;
     --ring: 228 60% 50%;
+    
+    /* Sidebar Variables Dark */
+    --sidebar-background: 228 60% 10%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 228 60% 50%;
+    --sidebar-primary-foreground: 210 40% 98%;
+    --sidebar-accent: 228 40% 15%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 228 40% 20%;
+    --sidebar-ring: 228 60% 50%;
   }
 }
 

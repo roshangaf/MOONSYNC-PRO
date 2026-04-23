@@ -15,6 +15,7 @@ import { refineMarketerTask } from "@/ai/flows/marketer-task-refinement-flow"
 import { useToast } from "@/hooks/use-toast"
 import { Loader2, Sparkles, Wand2, MapPin, User, Phone } from "lucide-react"
 import { useAuth } from "@/components/auth-context"
+import { Task, TaskStatus } from "@/lib/types"
 
 const taskSchema = z.object({
   title: z.string().min(5, "Title must be at least 5 characters"),
@@ -80,6 +81,28 @@ export default function NewTaskPage() {
   }
 
   function onSubmit(values: z.infer<typeof taskSchema>) {
+    const newTask: Task = {
+      id: `TASK-${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
+      title: values.title,
+      description: values.description || "",
+      contactName: values.contactName,
+      contactNumber: values.contactNumber,
+      address: values.address,
+      status: 'Pending' as TaskStatus,
+      priority: values.priority,
+      createdBy: user?.id || 'unknown',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      timeLogs: [],
+      detailedDescription: refinedData?.refinedDescription,
+      subTasks: refinedData?.subTasks,
+      steps: refinedData?.steps,
+    }
+
+    const savedTasksStr = localStorage.getItem('moonsync_tasks');
+    const existingTasks = savedTasksStr ? JSON.parse(savedTasksStr) : [];
+    localStorage.setItem('moonsync_tasks', JSON.stringify([newTask, ...existingTasks]));
+
     toast({
       title: "Task Created Successfully",
       description: `Job listed by ${user?.name}. Admin will now assign this task.`,
@@ -88,28 +111,28 @@ export default function NewTaskPage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
-      <div className="space-y-1">
-        <h1 className="text-3xl font-bold tracking-tight text-primary">Create New Service Task</h1>
-        <p className="text-muted-foreground">Detail the requirement. Originator: <span className="font-bold text-primary">{user?.name}</span></p>
+    <div className="max-w-3xl mx-auto space-y-6 px-4 py-6 md:px-0">
+      <div className="space-y-1 text-center md:text-left">
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-primary uppercase">Create New Service Task</h1>
+        <p className="text-xs md:text-sm text-muted-foreground uppercase tracking-widest">Originator: <span className="font-bold text-primary">{user?.name}</span></p>
       </div>
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-          <Card className="border-t-4 border-t-primary shadow-lg">
-            <CardHeader>
-              <CardTitle>Job Identification</CardTitle>
-              <CardDescription>Enter the core details for the service request.</CardDescription>
+          <Card className="border-t-4 border-t-primary shadow-lg overflow-hidden">
+            <CardHeader className="bg-slate-50/50">
+              <CardTitle className="text-xs font-black uppercase tracking-widest">Job Identification</CardTitle>
+              <CardDescription className="text-[10px] uppercase font-bold">Enter the core details for the service request.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-6 pt-6">
               <FormField
                 control={form.control}
                 name="title"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Task Title / Subject</FormLabel>
+                    <FormLabel className="text-[10px] font-black uppercase text-slate-500">Task Title / Subject</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g. Server Maintenance for Client XYZ" {...field} />
+                      <Input placeholder="e.g. Server Maintenance for Client XYZ" className="h-12 bg-slate-50 rounded-xl" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -122,11 +145,11 @@ export default function NewTaskPage() {
                   name="contactName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="flex items-center gap-2">
-                        <User className="h-3 w-3" /> Contact Name (Optional)
+                      <FormLabel className="flex items-center gap-2 text-[10px] font-black uppercase text-slate-500">
+                        <User className="h-3 w-3" /> Contact Name
                       </FormLabel>
                       <FormControl>
-                        <Input placeholder="John Doe" {...field} />
+                        <Input placeholder="John Doe" className="h-12 bg-slate-50 rounded-xl" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -138,11 +161,11 @@ export default function NewTaskPage() {
                   name="contactNumber"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="flex items-center gap-2">
-                        <Phone className="h-3 w-3" /> Phone Number (Optional)
+                      <FormLabel className="flex items-center gap-2 text-[10px] font-black uppercase text-slate-500">
+                        <Phone className="h-3 w-3" /> Phone Number
                       </FormLabel>
                       <FormControl>
-                        <Input placeholder="+1 (555) 000-0000" {...field} />
+                        <Input placeholder="+977 98..." className="h-12 bg-slate-50 rounded-xl" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -155,11 +178,11 @@ export default function NewTaskPage() {
                 name="address"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="flex items-center gap-2">
-                      <MapPin className="h-3 w-3" /> Service Address (Optional)
+                    <FormLabel className="flex items-center gap-2 text-[10px] font-black uppercase text-slate-500">
+                      <MapPin className="h-3 w-3" /> Deployment Address
                     </FormLabel>
                     <FormControl>
-                      <Input placeholder="123 Business Way, Tech Park" {...field} />
+                      <Input placeholder="Client Location / Site" className="h-12 bg-slate-50 rounded-xl" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -171,11 +194,11 @@ export default function NewTaskPage() {
                 name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Job Description (Optional)</FormLabel>
+                    <FormLabel className="text-[10px] font-black uppercase text-slate-500">Job Requirement Description</FormLabel>
                     <FormControl>
                       <Textarea 
                         placeholder="Provide a high-level overview of what needs to be done..." 
-                        className="min-h-[120px]"
+                        className="min-h-[120px] bg-slate-50 rounded-xl"
                         {...field} 
                       />
                     </FormControl>
@@ -184,7 +207,7 @@ export default function NewTaskPage() {
                         type="button" 
                         variant="outline" 
                         size="sm" 
-                        className="text-accent border-accent hover:bg-accent hover:text-white"
+                        className="text-accent border-accent hover:bg-accent hover:text-white rounded-xl h-10 px-4 font-black uppercase text-[10px] tracking-widest"
                         onClick={handleAIRefine}
                         disabled={isRefining}
                       >
@@ -202,18 +225,18 @@ export default function NewTaskPage() {
                 name="priority"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Priority Level</FormLabel>
+                    <FormLabel className="text-[10px] font-black uppercase text-slate-500">Priority Level</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
-                        <SelectTrigger>
+                        <SelectTrigger className="h-12 bg-slate-50 rounded-xl font-bold">
                           <SelectValue placeholder="Select priority" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="Low">Low</SelectItem>
-                        <SelectItem value="Medium">Medium</SelectItem>
-                        <SelectItem value="High">High</SelectItem>
-                        <SelectItem value="Critical">Critical</SelectItem>
+                        <SelectItem value="Low" className="font-bold">LOW</SelectItem>
+                        <SelectItem value="Medium" className="font-bold">MEDIUM</SelectItem>
+                        <SelectItem value="High" className="font-bold">HIGH</SelectItem>
+                        <SelectItem value="Critical" className="font-bold text-destructive">CRITICAL</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -224,47 +247,52 @@ export default function NewTaskPage() {
           </Card>
 
           {refinedData && (
-            <Card className="border-t-4 border-t-accent bg-accent/5">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Wand2 className="h-5 w-5 text-accent" />
-                  AI Suggested Plan
+            <Card className="border-t-4 border-t-accent bg-accent/5 overflow-hidden">
+              <CardHeader className="bg-white/50 border-b">
+                <CardTitle className="flex items-center gap-2 text-xs font-black uppercase tracking-widest">
+                  <Wand2 className="h-4 w-4 text-accent" />
+                  AI Execution Blueprint
                 </CardTitle>
-                <CardDescription>The technician will see these details upon assignment.</CardDescription>
+                <CardDescription className="text-[10px] uppercase font-bold">Technical implementation suggestions for personnel.</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-6">
+              <CardContent className="space-y-6 pt-6">
                 <div className="space-y-2">
-                  <h4 className="font-semibold text-sm">Refined Description</h4>
-                  <p className="text-sm text-muted-foreground bg-white p-3 rounded-md border border-accent/20 italic">
+                  <h4 className="text-[10px] font-black uppercase text-slate-500">Refined Scope</h4>
+                  <p className="text-xs text-slate-700 bg-white p-4 rounded-2xl border border-accent/20 italic font-medium leading-relaxed">
                     {refinedData.refinedDescription}
                   </p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <h4 className="font-semibold text-sm">Suggested Sub-tasks</h4>
-                    <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
+                  <div className="space-y-3">
+                    <h4 className="text-[10px] font-black uppercase text-slate-500">Sub-tasks Inventory</h4>
+                    <ul className="space-y-2">
                       {refinedData.subTasks?.map((st, i) => (
-                        <li key={i}>{st}</li>
+                        <li key={i} className="flex gap-2 text-[11px] font-bold text-slate-600 bg-white p-2 rounded-lg border border-slate-100">
+                          <span className="text-accent">•</span> {st}
+                        </li>
                       ))}
                     </ul>
                   </div>
-                  <div className="space-y-2">
-                    <h4 className="font-semibold text-sm">Implementation Steps</h4>
-                    <ul className="list-decimal list-inside text-sm text-muted-foreground space-y-1">
+                  <div className="space-y-3">
+                    <h4 className="text-[10px] font-black uppercase text-slate-500">Deployment Sequence</h4>
+                    <ol className="space-y-2">
                       {refinedData.steps?.map((step, i) => (
-                        <li key={i}>{step}</li>
+                        <li key={i} className="flex gap-3 text-[11px] font-bold text-slate-600 bg-white p-2 rounded-lg border border-slate-100">
+                          <span className="h-5 w-5 bg-accent/10 rounded-full flex items-center justify-center text-[10px] text-accent shrink-0">{i+1}</span>
+                          {step}
+                        </li>
                       ))}
-                    </ul>
+                    </ol>
                   </div>
                 </div>
               </CardContent>
             </Card>
           )}
 
-          <div className="flex items-center justify-end gap-4">
-            <Button type="button" variant="ghost" onClick={() => router.back()}>Cancel</Button>
-            <Button type="submit" className="bg-primary text-primary-foreground min-w-[150px]">Create Task</Button>
+          <div className="flex flex-col sm:flex-row items-center justify-end gap-4 pb-10">
+            <Button type="button" variant="ghost" onClick={() => router.back()} className="w-full sm:w-auto font-black uppercase text-xs tracking-widest h-12">Cancel</Button>
+            <Button type="submit" className="w-full sm:w-auto bg-primary text-primary-foreground min-w-[200px] h-12 font-black uppercase text-xs tracking-widest shadow-xl shadow-primary/20 transition-transform active:scale-95">Initialize Job Node</Button>
           </div>
         </form>
       </Form>
