@@ -51,7 +51,12 @@ export default function CompanyLoginPage() {
 
   const handleCompanyVerify = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!domain.toLowerCase().includes("moonsync")) {
+    
+    // Logic to reset dashboard if company ID changes
+    const lastCompany = localStorage.getItem('moonsync_last_company');
+    const currentDomain = domain.trim().toLowerCase();
+
+    if (!currentDomain.includes("moonsync")) {
       toast({
         title: "Invalid Company",
         description: "Please enter your registered company name (e.g. MoonSync Pro).",
@@ -62,8 +67,24 @@ export default function CompanyLoginPage() {
     
     setIsVerifying(true)
     setTimeout(() => {
+      // If domain has changed, purge all data for the new company session
+      if (lastCompany && lastCompany !== currentDomain) {
+        localStorage.removeItem('moonsync_tasks');
+        localStorage.removeItem('moonsync_bills');
+        localStorage.removeItem('moonsync_attendance');
+        localStorage.removeItem('moonsync_company_profile');
+        localStorage.removeItem('moonsync_dept_keys');
+        localStorage.removeItem('performa_user');
+        
+        toast({
+          title: "New Company Context Detected",
+          description: "Terminal data has been reset for the new organizational ID.",
+        });
+      }
+
       setIsVerifying(false)
       setStep(2)
+      localStorage.setItem('moonsync_last_company', currentDomain);
       localStorage.setItem('company_verified', 'true');
       toast({
         title: "Access Granted",
