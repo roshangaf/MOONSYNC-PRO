@@ -10,11 +10,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Building2, ShieldCheck, Lock, ArrowRight, Loader2, Sparkles, User, Fingerprint } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/components/auth-context"
-import { Role, User as UserType } from "@/lib/types"
+import { Role } from "@/lib/types"
 import { MOCK_USERS } from "@/lib/store"
 
-// Unique Department Keys
-const DEPT_KEYS: Record<Role, string> = {
+// Default Keys fallback
+const DEFAULT_DEPT_KEYS: Record<Role, string> = {
   'Admin': 'SUPER-ADMIN-2024',
   'Marketing': 'CREATIVE-HUB-55',
   'Technician': 'FIELD-OPS-88',
@@ -30,6 +30,7 @@ export default function CompanyLoginPage() {
   const [isVerifying, setIsVerifying] = useState(false)
   const [step, setStep] = useState(1)
   const [selectedRole, setSelectedRole] = useState<Role | null>(null)
+  const [dynamicDeptKeys, setDynamicDeptKeys] = useState<Record<Role, string>>(DEFAULT_DEPT_KEYS)
   
   const router = useRouter()
   const { toast } = useToast()
@@ -39,6 +40,12 @@ export default function CompanyLoginPage() {
     const companyVerified = localStorage.getItem('company_verified') === 'true';
     if (companyVerified) {
       setStep(2);
+    }
+
+    // Load dynamic department keys from infrastructure
+    const savedKeys = localStorage.getItem('moonsync_dept_keys');
+    if (savedKeys) {
+      setDynamicDeptKeys(JSON.parse(savedKeys));
     }
   }, []);
 
@@ -74,7 +81,7 @@ export default function CompanyLoginPage() {
     e.preventDefault()
     if (!selectedRole) return;
 
-    if (deptKey !== DEPT_KEYS[selectedRole]) {
+    if (deptKey !== dynamicDeptKeys[selectedRole]) {
       toast({
         title: "Invalid Department Signature",
         description: `The access key for ${selectedRole} is incorrect.`,
@@ -111,7 +118,6 @@ export default function CompanyLoginPage() {
     setTimeout(() => {
       setIsVerifying(false)
       if (selectedRole) {
-        // Use the specific user from the store
         login(selectedRole); 
         toast({
           title: "Session Initialized",
