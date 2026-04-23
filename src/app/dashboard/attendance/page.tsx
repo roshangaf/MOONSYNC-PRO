@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { useAuth } from "@/components/auth-context"
-import { MOCK_ATTENDANCE, MOCK_USERS } from "@/lib/store"
+import { MOCK_USERS } from "@/lib/store"
 import { 
   Clock, 
   LogIn, 
@@ -44,7 +44,6 @@ export default function AttendancePage() {
   useEffect(() => {
     // Initial Load from Storage
     const savedLogs = localStorage.getItem('moonsync_attendance');
-    const wasReset = localStorage.getItem('moonsync_was_reset') === 'true';
     
     if (savedLogs) {
       const parsedLogs = JSON.parse(savedLogs);
@@ -57,10 +56,8 @@ export default function AttendancePage() {
       if (activeSession) {
         setIsCheckedIn(true);
       }
-    } else if (!wasReset) {
-      setRecords(MOCK_ATTENDANCE);
-      localStorage.setItem('moonsync_attendance', JSON.stringify(MOCK_ATTENDANCE));
     } else {
+      // Start with empty ledger
       setRecords([]);
     }
 
@@ -138,7 +135,7 @@ export default function AttendancePage() {
     : records.filter(r => r.userId === user?.id);
 
   const presentCount = filteredRecords.filter(r => r.status === 'Present').length;
-  const attendancePercentage = (presentCount / (filteredRecords.length || 1)) * 100;
+  const attendancePercentage = filteredRecords.length > 0 ? (presentCount / filteredRecords.length) * 100 : 0;
 
   return (
     <div className="space-y-6">
