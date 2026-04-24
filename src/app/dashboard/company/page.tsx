@@ -85,7 +85,13 @@ export default function CompanyPage() {
     if (!db || !tempData || !companyRef) return;
     setIsSaving(true);
     
-    setDoc(companyRef, tempData, { merge: true })
+    // Ensure deptKeys exist before saving
+    const finalData = {
+      ...tempData,
+      deptKeys: tempData.deptKeys || DEFAULT_DEPT_KEYS
+    };
+
+    setDoc(companyRef, finalData, { merge: true })
       .then(() => {
         setIsSaving(false);
         setIsEditing(false);
@@ -99,7 +105,7 @@ export default function CompanyPage() {
         const permissionError = new FirestorePermissionError({
           path: companyRef.path,
           operation: 'update',
-          requestResourceData: tempData,
+          requestResourceData: finalData,
         });
         errorEmitter.emit('permission-error', permissionError);
       });

@@ -11,7 +11,7 @@ import { Building2, ShieldCheck, Lock, ArrowRight, Loader2, User as UserIcon, Fi
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/components/auth-context"
 import { Role, User } from "@/lib/types"
-import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
+import { useFirestore, useCollection, useMemoFirebase, useDoc } from "@/firebase"
 import { collection, query, where, doc, setDoc } from "firebase/firestore"
 
 const DEFAULT_DEPT_KEYS: Record<Role, string> = {
@@ -35,6 +35,9 @@ export default function CompanyLoginPage() {
   const { toast } = useToast()
   const { login } = useAuth()
   const db = useFirestore()
+
+  const companyRef = useMemoFirebase(() => db ? doc(db, 'settings', 'company') : null, [db]);
+  const { data: companySettings } = useDoc<any>(companyRef);
 
   const allUsersQuery = useMemoFirebase(() => db ? collection(db, 'users') : null, [db]);
   const { data: allUsers = [] } = useCollection<User>(allUsersQuery);
@@ -86,7 +89,10 @@ export default function CompanyLoginPage() {
     e.preventDefault()
     if (!selectedRole) return;
 
-    if (deptKey !== DEFAULT_DEPT_KEYS[selectedRole]) {
+    const cloudKeys = companySettings?.deptKeys || DEFAULT_DEPT_KEYS;
+    const expectedKey = cloudKeys[selectedRole] || DEFAULT_DEPT_KEYS[selectedRole];
+
+    if (deptKey !== expectedKey) {
       toast({
         title: "Invalid Department Signature",
         description: `Incorrect key for the ${selectedRole} hub.`,
@@ -185,7 +191,7 @@ export default function CompanyLoginPage() {
                     Infrastructure Domain
                   </label>
                   <Input 
-                    name="org-node-id"
+                    name="org-node-domain"
                     placeholder="Mansa Tech / MoonSync Pro" 
                     className="h-12 bg-white/50 border-slate-200 focus:ring-primary/20 rounded-xl font-bold"
                     value={domain}
@@ -197,10 +203,10 @@ export default function CompanyLoginPage() {
                 <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
                     <Lock className="w-3 h-3" />
-                    Security Key
+                    Security Token
                   </label>
                   <Input 
-                    name="org-security-token"
+                    name="org-node-token"
                     type="password"
                     placeholder="Enter Token" 
                     className="h-12 bg-white/50 border-slate-200 focus:ring-primary/20 rounded-xl font-mono"
@@ -215,7 +221,7 @@ export default function CompanyLoginPage() {
                   className="w-full h-14 bg-primary hover:bg-primary/90 font-black uppercase tracking-widest shadow-xl shadow-primary/20 rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
                   disabled={isVerifying}
                 >
-                  {isVerifying ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Access Infrastructure"}
+                  {isVerifying ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Establish Handshake"}
                 </Button>
               </form>
             )}
@@ -255,7 +261,7 @@ export default function CompanyLoginPage() {
                     className="mt-4 text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] hover:text-primary transition-colors"
                     onClick={handleReset}
                 >
-                    Reset Link
+                    Reset Terminal Link
                 </Button>
               </div>
             )}
@@ -268,7 +274,7 @@ export default function CompanyLoginPage() {
                     Department Node Key
                   </label>
                   <Input 
-                    name="dept-node-key"
+                    name="dept-node-security-key"
                     type="password"
                     placeholder={`${selectedRole} Access Key`} 
                     className="h-12 bg-white/50 border-slate-200 focus:ring-primary/20 rounded-xl font-mono"
@@ -324,7 +330,7 @@ export default function CompanyLoginPage() {
                       Security PIN (4-Digits)
                     </label>
                     <Input 
-                      name="personnel-pin-node"
+                      name="personnel-pin-node-sync"
                       type="password"
                       placeholder="••••" 
                       className="h-12 bg-white/50 border-slate-200 focus:ring-primary/20 rounded-xl tracking-[1.5em] text-center font-black"
