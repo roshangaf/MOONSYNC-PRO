@@ -24,18 +24,25 @@ export default function UsersPage() {
   const usersRef = useMemoFirebase(() => db ? collection(db, 'users') : null, [db]);
   const { data: users = [] } = useCollection<User>(usersRef);
   
-  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [editingUser, setEditingUser] = useState<Partial<User> | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isAddingNew, setIsAddingNew] = useState(false);
   const { toast } = useToast();
 
-  const handleAdminAction = (action: string, userName: string) => {
-    toast({
-      title: `${action} Executed`,
-      description: `Security protocol performed for ${userName}. Ledger synced.`,
+  const openAddDialog = () => {
+    setIsAddingNew(true);
+    setEditingUser({
+      name: '',
+      email: '',
+      role: 'Technician',
+      department: 'Technician',
+      pin: '',
     });
+    setIsEditDialogOpen(true);
   };
 
   const openEditDialog = (user: User) => {
+    setIsAddingNew(false);
     setEditingUser({ ...user });
     setIsEditDialogOpen(true);
   };
@@ -43,15 +50,23 @@ export default function UsersPage() {
   const handleSaveUser = () => {
     if (!editingUser || !db) return;
 
-    const userRef = doc(db, 'users', editingUser.id);
-    const updatedUser = { ...editingUser };
+    const userId = isAddingNew 
+      ? `USER-${Math.random().toString(36).substr(2, 6).toUpperCase()}` 
+      : (editingUser.id as string);
+      
+    const userRef = doc(db, 'users', userId);
+    const updatedUser = { 
+      ...editingUser, 
+      id: userId,
+      department: editingUser.role === 'Admin' ? 'Administration' : (editingUser.role as Department)
+    };
     
-    // Optimistic Update: Close and toast immediately to remove lag
+    // Optimistic Sync: Close and notify instantly
     setDoc(userRef, updatedUser, { merge: true })
       .catch(async (error) => {
         const permissionError = new FirestorePermissionError({
           path: userRef.path,
-          operation: 'update',
+          operation: isAddingNew ? 'create' : 'update',
           requestResourceData: updatedUser,
         });
         errorEmitter.emit('permission-error', permissionError);
@@ -59,8 +74,8 @@ export default function UsersPage() {
 
     setIsEditDialogOpen(false);
     toast({
-      title: "Profile Synchronized",
-      description: `Identity records for ${updatedUser.name} have been updated in the MoonSync cloud.`,
+      title: isAddingNew ? "Personnel Initialized" : "Profile Synchronized",
+      description: `${updatedUser.name} has been updated in the MoonSync cloud directory.`,
     });
   };
 
@@ -91,7 +106,10 @@ export default function UsersPage() {
           <h1 className="text-3xl font-bold tracking-tight text-primary uppercase">User Management</h1>
           <p className="text-muted-foreground">Administer roles, departments and account access levels across MoonSync Pro.</p>
         </div>
-        <Button className="bg-primary font-bold uppercase text-xs tracking-widest h-10 shadow-lg shadow-primary/20" onClick={() => handleAdminAction("Add User Interface", "Terminal")}>
+        <Button 
+          className="bg-primary font-bold uppercase text-xs tracking-widest h-10 shadow-lg shadow-primary/20" 
+          onClick={openAddDialog}
+        >
           <UserPlus className="mr-2 h-4 w-4" />
           Add Personnel
         </Button>
@@ -187,8 +205,8 @@ export default function UsersPage() {
           <div className="absolute top-0 left-0 w-full h-1.5 bg-primary" />
           <DialogHeader className="pt-4">
             <DialogTitle className="uppercase tracking-widest text-primary font-black flex items-center gap-2">
-              <Edit2 className="h-5 w-5" />
-              Edit Personnel Profile
+              {isAddingNew ? <UserPlus className="h-5 w-5" /> : <Edit2 className="h-5 w-5" />}
+              {isAddingNew ? 'Register New Personnel' : 'Edit Personnel Profile'}
             </DialogTitle>
             <DialogDescription className="text-xs">
               Synchronize departmental roles and security identity metadata.
@@ -200,18 +218,22 @@ export default function UsersPage() {
                 <Label htmlFor="name" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Full Name</Label>
                 <Input
                   id="name"
-                  value={editingUser.name}
+                  value={editingUser.name || ""}
                   onChange={(e) => setEditingUser({ ...editingUser, name: e.target.value })}
                   className="h-11 bg-slate-50 border-slate-200 focus:ring-primary/20 rounded-xl font-bold"
+                  placeholder="e.g. John Doe"
+                  autoComplete="off"
                 />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="email" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Email Address</Label>
                 <Input
                   id="email"
-                  value={editingUser.email}
+                  value={editingUser.email || ""}
                   onChange={(e) => setEditingUser({ ...editingUser, email: e.target.value })}
                   className="h-11 bg-slate-50 border-slate-200 focus:ring-primary/20 rounded-xl font-bold"
+                  placeholder="john@moonsyncpro.io"
+                  autoComplete="off"
                 />
               </div>
               <div className="grid gap-2">
@@ -219,7 +241,7 @@ export default function UsersPage() {
                 <Select 
                   value={editingUser.role} 
                   onValueChange={(v: Role) => {
-                    const dept: Department = v === 'Admin' ? 'Administration' : v as Department;
+                    const dept: Department = v === 'Admin' ? 'Administration' : (v as Department);
                     setEditingUser({ ...editingUser, role: v, department: dept });
                   }}
                 >
@@ -240,13 +262,13 @@ export default function UsersPage() {
                 </Label>
                 <Input
                   id="pin"
-                  type="password"
+                  type="text"
                   maxLength={4}
                   value={editingUser.pin || ""}
-                  onChange={(e) => setEditingUser({ ...editingUser, pin: e.target.value })}
+                  onChange={(e) => setEditingUser({ ...editingUser, pin: e.target.value.replace(/\D/g, '') })}
                   className="h-11 bg-slate-50 border-slate-200 focus:ring-primary/20 rounded-xl font-mono text-center tracking-[1em]"
                   placeholder="••••"
-                  autoComplete="new-password"
+                  autoComplete="off"
                 />
               </div>
             </div>
@@ -255,8 +277,12 @@ export default function UsersPage() {
             <Button variant="outline" onClick={() => setIsEditDialogOpen(false)} className="uppercase font-bold text-[10px] tracking-widest rounded-xl h-11 px-6">
               Cancel
             </Button>
-            <Button onClick={handleSaveUser} className="uppercase font-bold text-[10px] tracking-widest bg-primary rounded-xl h-11 px-6 shadow-lg shadow-primary/20 transition-all active:scale-95">
-              Apply Changes
+            <Button 
+              onClick={handleSaveUser} 
+              disabled={!editingUser?.name || !editingUser?.email || editingUser?.pin?.length !== 4}
+              className="uppercase font-bold text-[10px] tracking-widest bg-primary rounded-xl h-11 px-6 shadow-lg shadow-primary/20 transition-all active:scale-95"
+            >
+              {isAddingNew ? 'Deploy Node' : 'Apply Changes'}
             </Button>
           </DialogFooter>
         </DialogContent>
