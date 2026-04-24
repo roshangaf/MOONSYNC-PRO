@@ -1,17 +1,17 @@
 
-"use client"
+'use client';
 
-import { useState, useEffect } from "react"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { MOCK_USERS } from "@/lib/store"
-import { useAuth } from "@/components/auth-context"
-import { Briefcase, Filter, Plus, Search, Download, Calendar, User, Phone, MapPin, Info, Trash2 } from "lucide-react"
-import Link from "next/link"
-import { useToast } from "@/hooks/use-toast"
+import { useState } from 'react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { MOCK_USERS } from '@/lib/store';
+import { useAuth } from '@/components/auth-context';
+import { Briefcase, Filter, Plus, Search, Download, Calendar, Info, Trash2 } from 'lucide-react';
+import Link from 'next/link';
+import { useToast } from '@/hooks/use-toast';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,33 +20,23 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   DropdownMenuCheckboxItem,
-} from "@/components/ui/dropdown-menu"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Task } from "@/lib/types"
+} from '@/components/ui/dropdown-menu';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Task } from '@/lib/types';
+import { useCollection, useFirestore } from '@/firebase';
+import { collection, doc, deleteDoc } from 'firebase/firestore';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 export default function TasksPage() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const db = useFirestore();
+  const { data: tasks = [], loading } = useCollection<Task>(db ? collection(db, 'tasks') : null);
+  
   const [searchTerm, setSearchTerm] = useState("");
-  const [mounted, setMounted] = useState(false);
   const [filterPriority, setFilterPriority] = useState<string[]>([]);
   const [filterStatus, setFilterStatus] = useState<string[]>([]);
-  const [tasks, setTasks] = useState<Task[]>([]);
-
-  useEffect(() => {
-    setMounted(true);
-    const savedTasks = localStorage.getItem('moonsync_tasks');
-    
-    if (savedTasks) {
-      setTasks(JSON.parse(savedTasks));
-    } else {
-      setTasks([]);
-    }
-  }, []);
-
-  const getStaffName = (id?: string) => {
-    return MOCK_USERS.find(u => u.id === id)?.name || "Unassigned";
-  };
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -55,7 +45,7 @@ export default function TasksPage() {
       case 'Medium': return 'secondary';
       default: return 'outline';
     }
-  }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -65,24 +55,33 @@ export default function TasksPage() {
       case 'Assigned': return 'outline';
       default: return 'outline';
     }
-  }
+  };
 
   const handleDownloadReport = () => {
     toast({
       title: "Generating Task Audit Report",
-      description: "Compiling comprehensive ledger including listing timestamps, personnel metadata, and high-precision completion records.",
+      description: "Compiling comprehensive ledger including cloud synchronization records.",
     });
   };
 
   const handleDeleteTask = (id: string) => {
-    const updatedTasks = tasks.filter(t => t.id !== id);
-    setTasks(updatedTasks);
-    localStorage.setItem('moonsync_tasks', JSON.stringify(updatedTasks));
-    toast({
-      title: "Task Deleted",
-      description: `Task ${id} has been permanently removed from the terminal.`,
-      variant: "destructive",
-    });
+    if (!db) return;
+    const taskRef = doc(db, 'tasks', id);
+    deleteDoc(taskRef)
+      .then(() => {
+        toast({
+          title: "Task Deleted",
+          description: `Task ${id} has been permanently removed from the cloud terminal.`,
+          variant: "destructive",
+        });
+      })
+      .catch(async (error) => {
+        const permissionError = new FirestorePermissionError({
+          path: taskRef.path,
+          operation: 'delete',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      });
   };
 
   const filteredTasks = tasks.filter(t => {
@@ -95,17 +94,6 @@ export default function TasksPage() {
 
     return matchesSearch && matchesPriority && matchesStatus;
   });
-
-  const uniqueCustomers = Array.from(new Set(tasks.map(t => t.contactName).filter(Boolean)))
-    .map(name => {
-      const task = tasks.find(t => t.contactName === name);
-      return {
-        name,
-        phone: task?.contactNumber || "Not Provided",
-        address: task?.address || "No Address Found",
-        tasks: tasks.filter(t => t.contactName === name)
-      }
-    });
 
   const togglePriorityFilter = (priority: string) => {
     setFilterPriority(prev => 
@@ -120,16 +108,21 @@ export default function TasksPage() {
   };
 
   const formatDate = (dateString: string) => {
-    if (!mounted) return "";
-    return new Date(dateString).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' });
+    try {
+      return new Date(dateString).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' });
+    } catch (e) {
+      return dateString;
+    }
   };
+
+  if (loading) return <div className="p-20 text-center animate-pulse font-black uppercase tracking-widest text-primary">Synchronizing Cloud Ledger...</div>;
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1">
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-primary uppercase">Job & Task Portal</h1>
-          <p className="text-xs md:text-sm text-muted-foreground">Track and manage service requests across all departments.</p>
+          <p className="text-xs md:text-sm text-muted-foreground">Track and manage service requests synchronized with MoonSync Cloud.</p>
         </div>
         <div className="flex items-center gap-3">
           {user?.role === 'Admin' && (
@@ -153,10 +146,6 @@ export default function TasksPage() {
             <TabsTrigger value="ledger" className="flex-1 sm:flex-none font-bold uppercase text-[10px] tracking-widest">
               <Briefcase className="h-3 w-3 mr-2" />
               Ledger
-            </TabsTrigger>
-            <TabsTrigger value="details" className="flex-1 sm:flex-none font-bold uppercase text-[10px] tracking-widest">
-              <Info className="h-3 w-3 mr-2" />
-              Directory
             </TabsTrigger>
           </TabsList>
 
@@ -276,69 +265,9 @@ export default function TasksPage() {
               {filteredTasks.length === 0 && (
                 <div className="p-10 text-center text-muted-foreground italic flex flex-col items-center gap-2">
                   <Briefcase className="h-6 w-6 opacity-20" />
-                  <p className="text-[10px] uppercase font-black tracking-widest">No entries found.</p>
+                  <p className="text-[10px] uppercase font-black tracking-widest">No cloud entries found.</p>
                 </div>
               )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="details">
-          <Card className="shadow-xl border-none overflow-hidden bg-white">
-            <CardHeader className="bg-slate-50 border-b py-4">
-              <CardTitle className="text-sm font-black uppercase tracking-widest">Personnel & Customer Directory</CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader className="bg-muted/50">
-                    <TableRow>
-                      <TableHead className="font-bold text-[10px] uppercase min-w-[120px]">Client Identity</TableHead>
-                      <TableHead className="font-bold text-[10px] uppercase hidden sm:table-cell">Contact</TableHead>
-                      <TableHead className="font-bold text-[10px] uppercase hidden md:table-cell">Address</TableHead>
-                      <TableHead className="text-right font-bold text-[10px] uppercase">Jobs</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {uniqueCustomers.map((customer, idx) => (
-                      <TableRow key={idx} className="hover:bg-primary/5">
-                        <TableCell className="font-black text-xs text-slate-800">
-                          <div className="flex items-center gap-2">
-                            <div className="h-6 w-6 rounded-lg bg-accent/10 flex items-center justify-center text-accent shrink-0">
-                              <User className="h-3 w-3" />
-                            </div>
-                            <span className="truncate">{customer.name}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="hidden sm:table-cell">
-                          <div className="flex items-center gap-1.5 text-[10px] font-medium text-slate-600">
-                            <Phone className="h-3 w-3 text-primary shrink-0" />
-                            {customer.phone}
-                          </div>
-                        </TableCell>
-                        <TableCell className="hidden md:table-cell">
-                          <div className="flex items-center gap-1.5 text-[10px] font-medium text-slate-600">
-                            <MapPin className="h-3 w-3 text-primary shrink-0" />
-                            <span className="truncate max-w-[150px]">{customer.address}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Badge variant="secondary" className="font-black text-[9px] px-2">
-                            {customer.tasks.length}
-                          </Badge>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    {uniqueCustomers.length === 0 && (
-                      <TableRow>
-                        <TableCell colSpan={4} className="p-10 text-center text-muted-foreground italic">
-                          <p className="text-[10px] uppercase font-black tracking-widest">No directory entries.</p>
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
             </CardContent>
           </Card>
         </TabsContent>

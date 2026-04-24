@@ -1,23 +1,27 @@
 
-"use client"
+'use client';
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
-import { MOCK_USERS } from "@/lib/store"
-import { UserPlus, MoreHorizontal, Mail, Shield, Edit2, UserX, UserCheck, Loader2, Key } from "lucide-react"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { useToast } from "@/hooks/use-toast"
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { User, Role, Department } from "@/lib/types"
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { UserPlus, MoreHorizontal, Shield, Edit2, UserX, UserCheck, Loader2, Key } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { useToast } from '@/hooks/use-toast';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { User, Role, Department } from '@/lib/types';
+import { useCollection, useFirestore } from '@/firebase';
+import { collection, doc, setDoc, deleteDoc } from 'firebase/firestore';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 export default function UsersPage() {
-  const [users, setUsers] = useState<User[]>(MOCK_USERS);
+  const db = useFirestore();
+  const { data: users = [], loading } = useCollection<User>(db ? collection(db, 'users') : null);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -31,25 +35,54 @@ export default function UsersPage() {
   };
 
   const openEditDialog = (user: User) => {
-    // Create a fresh clone to avoid reference issues
     setEditingUser({ ...user });
     setIsEditDialogOpen(true);
   };
 
   const handleSaveUser = () => {
-    if (!editingUser) return;
+    if (!editingUser || !db) return;
 
     setIsSaving(true);
-    // Simulate a brief handshake with the server
-    setTimeout(() => {
-      setUsers(prev => prev.map(u => u.id === editingUser.id ? { ...editingUser } : u));
-      setIsEditDialogOpen(false);
-      setIsSaving(false);
-      toast({
-        title: "Profile Synchronized",
-        description: `Identity records for ${editingUser.name} have been updated in the MoonSync core.`,
+    const userRef = doc(db, 'users', editingUser.id);
+    
+    setDoc(userRef, editingUser, { merge: true })
+      .then(() => {
+        setIsEditDialogOpen(false);
+        setIsSaving(false);
+        toast({
+          title: "Profile Synchronized",
+          description: `Identity records for ${editingUser.name} have been updated in the MoonSync cloud.`,
+        });
+      })
+      .catch(async (error) => {
+        setIsSaving(false);
+        const permissionError = new FirestorePermissionError({
+          path: userRef.path,
+          operation: 'update',
+          requestResourceData: editingUser,
+        });
+        errorEmitter.emit('permission-error', permissionError);
       });
-    }, 600);
+  };
+
+  const handleDeleteUser = (userId: string, userName: string) => {
+    if (!db) return;
+    const userRef = doc(db, 'users', userId);
+    deleteDoc(userRef)
+      .then(() => {
+        toast({
+          title: "Node Deactivated",
+          description: `${userName} has been removed from the organizational directory.`,
+          variant: "destructive"
+        });
+      })
+      .catch(async (error) => {
+        const permissionError = new FirestorePermissionError({
+          path: userRef.path,
+          operation: 'delete',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      });
   };
 
   const handlePasswordReset = (user: User) => {
@@ -58,6 +91,8 @@ export default function UsersPage() {
       description: `A secure link to reset PIN/Password has been dispatched to ${user.email}.`,
     });
   };
+
+  if (loading) return <div className="p-10 text-center animate-pulse font-black uppercase tracking-widest text-primary">Synchronizing Cloud Directory...</div>;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -135,7 +170,7 @@ export default function UsersPage() {
                           <Edit2 className="mr-2 h-4 w-4 text-primary" /> Modify Profile
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => handleAdminAction("Deactivation", user.name)} className="text-xs font-bold text-destructive py-2">
+                        <DropdownMenuItem onClick={() => handleDeleteUser(user.id, user.name)} className="text-xs font-bold text-destructive py-2">
                           <UserX className="mr-2 h-4 w-4" /> Deactivate Node
                         </DropdownMenuItem>
                       </DropdownMenuContent>
@@ -143,12 +178,19 @@ export default function UsersPage() {
                   </TableCell>
                 </TableRow>
               ))}
+              {users.length === 0 && !loading && (
+                <TableRow>
+                  <TableCell colSpan={5} className="py-20 text-center font-black uppercase tracking-[0.5em] text-slate-300">
+                    Directory Offline
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </CardContent>
         <div className="bg-slate-50 border-t p-4 flex justify-center">
            <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.5em]">
-             Personnel Integrity Terminal • MoonSync Pro ERP Node
+             Personnel Integrity Terminal • Cloud Synchronized
            </p>
         </div>
       </Card>

@@ -1,21 +1,26 @@
-"use client"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import { z } from "zod"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { refineMarketerTask } from "@/ai/flows/marketer-task-refinement-flow"
-import { useToast } from "@/hooks/use-toast"
-import { Loader2, Sparkles, Wand2, MapPin, User, Phone } from "lucide-react"
-import { useAuth } from "@/components/auth-context"
-import { Task, TaskStatus } from "@/lib/types"
+'use client';
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { refineMarketerTask } from '@/ai/flows/marketer-task-refinement-flow';
+import { useToast } from '@/hooks/use-toast';
+import { Loader2, Sparkles, Wand2, MapPin, User, Phone } from 'lucide-react';
+import { useAuth } from '@/components/auth-context';
+import { Task, TaskStatus } from '@/lib/types';
+import { useFirestore } from '@/firebase';
+import { collection, doc, setDoc } from 'firebase/firestore';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 const taskSchema = z.object({
   title: z.string().min(5, "Title must be at least 5 characters"),
@@ -24,19 +29,20 @@ const taskSchema = z.object({
   contactNumber: z.string().optional(),
   address: z.string().optional(),
   priority: z.enum(["Low", "Medium", "High", "Critical"]),
-})
+});
 
 export default function NewTaskPage() {
-  const [isRefining, setIsRefining] = useState(false)
+  const [isRefining, setIsRefining] = useState(false);
   const [refinedData, setRefinedData] = useState<{
     refinedDescription?: string;
     subTasks?: string[];
     steps?: string[];
-  } | null>(null)
+  } | null>(null);
   
-  const { user } = useAuth()
-  const { toast } = useToast()
-  const router = useRouter()
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const router = useRouter();
+  const db = useFirestore();
 
   const form = useForm<z.infer<typeof taskSchema>>({
     resolver: zodResolver(taskSchema),
@@ -48,41 +54,44 @@ export default function NewTaskPage() {
       address: "",
       priority: "Medium",
     },
-  })
+  });
 
   async function handleAIRefine() {
-    const description = form.getValues("description")
+    const description = form.getValues("description");
     if (!description || description.length < 10) {
       toast({
         title: "More info needed",
         description: "Please provide a brief description before using AI refinement.",
         variant: "destructive",
-      })
-      return
+      });
+      return;
     }
 
-    setIsRefining(true)
+    setIsRefining(true);
     try {
-      const result = await refineMarketerTask({ taskDescription: description })
-      setRefinedData(result)
+      const result = await refineMarketerTask({ taskDescription: description });
+      setRefinedData(result);
       toast({
         title: "Task Refined",
         description: "AI has suggested detailed steps and sub-tasks.",
-      })
+      });
     } catch (error) {
       toast({
         title: "AI Error",
         description: "Failed to refine task details. Please try again.",
         variant: "destructive",
-      })
+      });
     } finally {
-      setIsRefining(false)
+      setIsRefining(false);
     }
   }
 
   function onSubmit(values: z.infer<typeof taskSchema>) {
+    if (!db) return;
+
+    const taskId = `TASK-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
     const newTask: Task = {
-      id: `TASK-${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
+      id: taskId,
       title: values.title,
       description: values.description || "",
       contactName: values.contactName,
@@ -97,17 +106,25 @@ export default function NewTaskPage() {
       detailedDescription: refinedData?.refinedDescription,
       subTasks: refinedData?.subTasks,
       steps: refinedData?.steps,
-    }
+    };
 
-    const savedTasksStr = localStorage.getItem('moonsync_tasks');
-    const existingTasks = savedTasksStr ? JSON.parse(savedTasksStr) : [];
-    localStorage.setItem('moonsync_tasks', JSON.stringify([newTask, ...existingTasks]));
-
-    toast({
-      title: "Task Created Successfully",
-      description: `Job listed by ${user?.name}. Admin will now assign this task.`,
-    })
-    router.push("/dashboard/tasks")
+    const taskRef = doc(db, 'tasks', taskId);
+    setDoc(taskRef, newTask)
+      .then(() => {
+        toast({
+          title: "Task Initialized",
+          description: `Job listed and synchronized with MoonSync Cloud.`,
+        });
+        router.push("/dashboard/tasks");
+      })
+      .catch(async (error) => {
+        const permissionError = new FirestorePermissionError({
+          path: taskRef.path,
+          operation: 'create',
+          requestResourceData: newTask,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      });
   }
 
   return (
@@ -122,7 +139,6 @@ export default function NewTaskPage() {
           <Card className="border-t-4 border-t-primary shadow-lg overflow-hidden">
             <CardHeader className="bg-slate-50/50">
               <CardTitle className="text-xs font-black uppercase tracking-widest">Job Identification</CardTitle>
-              <CardDescription className="text-[10px] uppercase font-bold">Enter the core details for the service request.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6 pt-6">
               <FormField
@@ -197,7 +213,7 @@ export default function NewTaskPage() {
                     <FormLabel className="text-[10px] font-black uppercase text-slate-500">Job Requirement Description</FormLabel>
                     <FormControl>
                       <Textarea 
-                        placeholder="Provide a high-level overview of what needs to be done..." 
+                        placeholder="Provide a high-level overview..." 
                         className="min-h-[120px] bg-slate-50 rounded-xl"
                         {...field} 
                       />
@@ -233,10 +249,10 @@ export default function NewTaskPage() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="Low" className="font-bold">LOW</SelectItem>
-                        <SelectItem value="Medium" className="font-bold">MEDIUM</SelectItem>
-                        <SelectItem value="High" className="font-bold">HIGH</SelectItem>
-                        <SelectItem value="Critical" className="font-bold text-destructive">CRITICAL</SelectItem>
+                        <SelectItem value="Low">LOW</SelectItem>
+                        <SelectItem value="Medium">MEDIUM</SelectItem>
+                        <SelectItem value="High">HIGH</SelectItem>
+                        <SelectItem value="Critical">CRITICAL</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -245,50 +261,6 @@ export default function NewTaskPage() {
               />
             </CardContent>
           </Card>
-
-          {refinedData && (
-            <Card className="border-t-4 border-t-accent bg-accent/5 overflow-hidden">
-              <CardHeader className="bg-white/50 border-b">
-                <CardTitle className="flex items-center gap-2 text-xs font-black uppercase tracking-widest">
-                  <Wand2 className="h-4 w-4 text-accent" />
-                  AI Execution Blueprint
-                </CardTitle>
-                <CardDescription className="text-[10px] uppercase font-bold">Technical implementation suggestions for personnel.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6 pt-6">
-                <div className="space-y-2">
-                  <h4 className="text-[10px] font-black uppercase text-slate-500">Refined Scope</h4>
-                  <p className="text-xs text-slate-700 bg-white p-4 rounded-2xl border border-accent/20 italic font-medium leading-relaxed">
-                    {refinedData.refinedDescription}
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-3">
-                    <h4 className="text-[10px] font-black uppercase text-slate-500">Sub-tasks Inventory</h4>
-                    <ul className="space-y-2">
-                      {refinedData.subTasks?.map((st, i) => (
-                        <li key={i} className="flex gap-2 text-[11px] font-bold text-slate-600 bg-white p-2 rounded-lg border border-slate-100">
-                          <span className="text-accent">•</span> {st}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                  <div className="space-y-3">
-                    <h4 className="text-[10px] font-black uppercase text-slate-500">Deployment Sequence</h4>
-                    <ol className="space-y-2">
-                      {refinedData.steps?.map((step, i) => (
-                        <li key={i} className="flex gap-3 text-[11px] font-bold text-slate-600 bg-white p-2 rounded-lg border border-slate-100">
-                          <span className="h-5 w-5 bg-accent/10 rounded-full flex items-center justify-center text-[10px] text-accent shrink-0">{i+1}</span>
-                          {step}
-                        </li>
-                      ))}
-                    </ol>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
 
           <div className="flex flex-col sm:flex-row items-center justify-end gap-4 pb-10">
             <Button type="button" variant="ghost" onClick={() => router.back()} className="w-full sm:w-auto font-black uppercase text-xs tracking-widest h-12">Cancel</Button>

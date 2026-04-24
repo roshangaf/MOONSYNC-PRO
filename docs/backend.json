@@ -1,0 +1,111 @@
+
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Organizational staff member identity and role.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "role": { "type": "string", "enum": ["Admin", "Marketing", "Technician", "Finance"] },
+        "department": { "type": "string" },
+        "pin": { "type": "string" },
+        "avatar": { "type": "string" }
+      },
+      "required": ["id", "name", "email", "role", "pin"]
+    },
+    "Task": {
+      "title": "Task",
+      "description": "A service job or technical request.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "contactName": { "type": "string" },
+        "contactNumber": { "type": "string" },
+        "address": { "type": "string" },
+        "status": { "type": "string", "enum": ["Pending", "Assigned", "In Progress", "Completed", "On Hold"] },
+        "priority": { "type": "string", "enum": ["Low", "Medium", "High", "Critical"] },
+        "createdBy": { "type": "string" },
+        "assignedTo": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "completedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "title", "status", "priority", "createdBy", "createdAt"]
+    },
+    "Bill": {
+      "title": "Bill",
+      "description": "Financial invoice or commercial estimate.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "type": { "type": "string", "enum": ["VAT", "Estimate"] },
+        "clientName": { "type": "string" },
+        "address": { "type": "string" },
+        "totalAmount": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["Paid", "Pending", "Overdue", "Void"] },
+        "currency": { "type": "string", "default": "NRS" }
+      },
+      "required": ["id", "type", "clientName", "totalAmount", "createdAt"]
+    },
+    "AttendanceRecord": {
+      "title": "AttendanceRecord",
+      "description": "Shift log entry for personnel.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "date": { "type": "string" },
+        "checkIn": { "type": "string" },
+        "checkOut": { "type": "string" },
+        "status": { "type": "string" },
+        "location": { "type": "string" }
+      },
+      "required": ["id", "userId", "date", "checkIn"]
+    },
+    "CompanyProfile": {
+      "title": "CompanyProfile",
+      "description": "Corporate settings and identity metadata.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "domain": { "type": "string" },
+        "vat": { "type": "string" },
+        "address": { "type": "string" },
+        "phone": { "type": "string" },
+        "email": { "type": "string" },
+        "deptKeys": { "type": "object" }
+      }
+    }
+  },
+  "auth": {
+    "providers": ["password"]
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Staff profile directory."
+    },
+    "/tasks/{taskId}": {
+      "schema": "Task",
+      "description": "Service job ledger."
+    },
+    "/bills/{billId}": {
+      "schema": "Bill",
+      "description": "Financial document archive."
+    },
+    "/attendance/{recordId}": {
+      "schema": "AttendanceRecord",
+      "description": "Personnel shift logs."
+    },
+    "/settings/company": {
+      "schema": "CompanyProfile",
+      "description": "Central corporate configuration."
+    }
+  }
+}
