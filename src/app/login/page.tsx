@@ -195,13 +195,14 @@ export default function CompanyLoginPage() {
          </CardHeader>
          <CardContent className="pb-10">
             {step === 1 && (
-              <form onSubmit={handleCompanyVerify} className="space-y-6">
+              <form onSubmit={handleCompanyVerify} className="space-y-6" autoComplete="off">
                 <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
                     <ShieldCheck className="w-3 h-3" />
                     Company Name
                   </label>
                   <Input 
+                    name="organization-id"
                     placeholder="Mansa Tech / MoonSync Pro" 
                     className="h-12 bg-white/50 border-slate-200 focus:ring-primary/20 rounded-xl font-bold"
                     value={domain}
@@ -216,6 +217,7 @@ export default function CompanyLoginPage() {
                     Security Token
                   </label>
                   <Input 
+                    name="security-token"
                     type="password"
                     placeholder="Enter Token" 
                     className="h-12 bg-white/50 border-slate-200 focus:ring-primary/20 rounded-xl font-mono"
@@ -277,13 +279,14 @@ export default function CompanyLoginPage() {
             )}
 
             {step === 3 && (
-              <form onSubmit={handleDeptVerify} className="space-y-6">
+              <form onSubmit={handleDeptVerify} className="space-y-6" autoComplete="off">
                 <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
                     <Lock className="w-3 h-3" />
                     Department Access Key
                   </label>
                   <Input 
+                    name="dept-access-key"
                     type="password"
                     placeholder={`${selectedRole} Primary Key`} 
                     className="h-12 bg-white/50 border-slate-200 focus:ring-primary/20 rounded-xl font-mono"
@@ -314,7 +317,7 @@ export default function CompanyLoginPage() {
             )}
 
             {step === 4 && (
-              <form onSubmit={handlePersonalLogin} className="space-y-6">
+              <form onSubmit={handlePersonalLogin} className="space-y-6" autoComplete="off">
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
@@ -339,6 +342,7 @@ export default function CompanyLoginPage() {
                       Security PIN
                     </label>
                     <Input 
+                      name="personnel-security-pin"
                       type="password"
                       placeholder="••••" 
                       className="h-12 bg-white/50 border-slate-200 focus:ring-primary/20 rounded-xl tracking-[1.5em] text-center font-black"
