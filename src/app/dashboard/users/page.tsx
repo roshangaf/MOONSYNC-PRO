@@ -246,6 +246,7 @@ export default function UsersPage() {
                   onChange={(e) => setEditingUser({ ...editingUser, pin: e.target.value })}
                   className="h-11 bg-slate-50 border-slate-200 focus:ring-primary/20 rounded-xl font-mono text-center tracking-[1em]"
                   placeholder="••••"
+                  autoComplete="new-password"
                 />
               </div>
             </div>

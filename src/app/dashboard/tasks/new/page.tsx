@@ -24,7 +24,7 @@ import { FirestorePermissionError } from '@/firebase/errors';
 
 const taskSchema = z.object({
   title: z.string().min(5, "Title must be at least 5 characters"),
-  description: z.string().optional(),
+  description: z.string().min(10, "Requirement description is required (min 10 chars)"),
   contactName: z.string().optional(),
   contactNumber: z.string().optional(),
   address: z.string().optional(),
@@ -60,8 +60,8 @@ export default function NewTaskPage() {
     const description = form.getValues("description");
     if (!description || description.length < 10) {
       toast({
-        title: "More info needed",
-        description: "Please provide a brief description before using AI refinement.",
+        title: "Context Required",
+        description: "Please provide a detailed requirement before using AI refinement.",
         variant: "destructive",
       });
       return;
@@ -72,13 +72,13 @@ export default function NewTaskPage() {
       const result = await refineMarketerTask({ taskDescription: description });
       setRefinedData(result);
       toast({
-        title: "Task Refined",
-        description: "AI has suggested detailed steps and sub-tasks.",
+        title: "Logic Refined",
+        description: "AI has generated an operational blueprint.",
       });
     } catch (error) {
       toast({
-        title: "AI Error",
-        description: "Failed to refine task details. Please try again.",
+        title: "AI Node Error",
+        description: "Failed to refine details. Manual entry is enabled.",
         variant: "destructive",
       });
     } finally {
@@ -110,7 +110,7 @@ export default function NewTaskPage() {
 
     const taskRef = doc(db, 'tasks', taskId);
     
-    // Background sync: No await to eliminate lag
+    // Turbo-Sync: Write to cloud cache and redirect immediately
     setDoc(taskRef, newTask)
       .catch(async (error) => {
         const permissionError = new FirestorePermissionError({
@@ -123,23 +123,23 @@ export default function NewTaskPage() {
 
     toast({
       title: "Task Initialized",
-      description: `Job listed and synchronized with MoonSync Cloud.`,
+      description: `Job ${taskId} is active on the cloud ledger.`,
     });
     router.push("/dashboard/tasks");
   }
 
   return (
     <div className="max-w-3xl mx-auto space-y-6 px-4 py-6 md:px-0">
-      <div className="space-y-1 text-center md:text-left">
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-primary uppercase">Create New Service Task</h1>
-        <p className="text-xs md:text-sm text-muted-foreground uppercase tracking-widest">Originator: <span className="font-bold text-primary">{user?.name}</span></p>
+      <div className="space-y-1">
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-primary uppercase">Initialize Job Node</h1>
+        <p className="text-xs md:text-sm text-muted-foreground uppercase tracking-widest">Operator: <span className="font-bold text-primary">{user?.name}</span></p>
       </div>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-          <Card className="border-t-4 border-t-primary shadow-lg overflow-hidden">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8" autoComplete="off">
+          <Card className="border-t-4 border-t-primary shadow-2xl overflow-hidden bg-white">
             <CardHeader className="bg-slate-50/50">
-              <CardTitle className="text-xs font-black uppercase tracking-widest">Job Identification</CardTitle>
+              <CardTitle className="text-xs font-black uppercase tracking-widest">Node Identification</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6 pt-6">
               <FormField
@@ -147,9 +147,9 @@ export default function NewTaskPage() {
                 name="title"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-[10px] font-black uppercase text-slate-500">Task Title / Subject</FormLabel>
+                    <FormLabel className="text-[10px] font-black uppercase text-slate-500">Service Title</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g. Server Maintenance for Client XYZ" className="h-12 bg-slate-50 rounded-xl" {...field} />
+                      <Input placeholder="e.g. Server Maintenance / Hub Installation" className="h-12 bg-slate-50 rounded-xl" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -163,10 +163,10 @@ export default function NewTaskPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="flex items-center gap-2 text-[10px] font-black uppercase text-slate-500">
-                        <User className="h-3 w-3" /> Contact Name
+                        <User className="h-3 w-3" /> Contact Entity
                       </FormLabel>
                       <FormControl>
-                        <Input placeholder="John Doe" className="h-12 bg-slate-50 rounded-xl" {...field} />
+                        <Input placeholder="Client Name" className="h-12 bg-slate-50 rounded-xl" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -179,10 +179,10 @@ export default function NewTaskPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="flex items-center gap-2 text-[10px] font-black uppercase text-slate-500">
-                        <Phone className="h-3 w-3" /> Phone Number
+                        <Phone className="h-3 w-3" /> Verification Phone
                       </FormLabel>
                       <FormControl>
-                        <Input placeholder="+977 98..." className="h-12 bg-slate-50 rounded-xl" {...field} />
+                        <Input placeholder="+977..." className="h-12 bg-slate-50 rounded-xl" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -199,7 +199,7 @@ export default function NewTaskPage() {
                       <MapPin className="h-3 w-3" /> Deployment Address
                     </FormLabel>
                     <FormControl>
-                      <Input placeholder="Client Location / Site" className="h-12 bg-slate-50 rounded-xl" {...field} />
+                      <Input placeholder="Exact Site Location" className="h-12 bg-slate-50 rounded-xl" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -211,11 +211,11 @@ export default function NewTaskPage() {
                 name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-[10px] font-black uppercase text-slate-500">Job Requirement Description</FormLabel>
+                    <FormLabel className="text-[10px] font-black uppercase text-slate-500">Technical Requirements</FormLabel>
                     <FormControl>
                       <Textarea 
-                        placeholder="Provide a high-level overview..." 
-                        className="min-h-[120px] bg-slate-50 rounded-xl"
+                        placeholder="Detailed requirement analysis..." 
+                        className="min-h-[120px] bg-slate-50 rounded-xl resize-none"
                         {...field} 
                       />
                     </FormControl>
@@ -223,13 +223,12 @@ export default function NewTaskPage() {
                       <Button 
                         type="button" 
                         variant="outline" 
-                        size="sm" 
-                        className="text-accent border-accent hover:bg-accent hover:text-white rounded-xl h-10 px-4 font-black uppercase text-[10px] tracking-widest"
+                        className="text-accent border-accent hover:bg-accent hover:text-white rounded-xl h-10 px-4 font-black uppercase text-[10px] tracking-widest shadow-sm"
                         onClick={handleAIRefine}
                         disabled={isRefining}
                       >
                         {isRefining ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                        AI Refine Details
+                        AI Operational Blueprint
                       </Button>
                     </div>
                     <FormMessage />
@@ -242,11 +241,11 @@ export default function NewTaskPage() {
                 name="priority"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-[10px] font-black uppercase text-slate-500">Priority Level</FormLabel>
+                    <FormLabel className="text-[10px] font-black uppercase text-slate-500">Escalation Priority</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger className="h-12 bg-slate-50 rounded-xl font-bold">
-                          <SelectValue placeholder="Select priority" />
+                          <SelectValue placeholder="Priority Signature" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -263,9 +262,9 @@ export default function NewTaskPage() {
             </CardContent>
           </Card>
 
-          <div className="flex flex-col sm:flex-row items-center justify-end gap-4 pb-10">
+          <div className="flex flex-col sm:flex-row items-center justify-end gap-4 pb-20">
             <Button type="button" variant="ghost" onClick={() => router.back()} className="w-full sm:w-auto font-black uppercase text-xs tracking-widest h-12">Cancel</Button>
-            <Button type="submit" className="w-full sm:w-auto bg-primary text-primary-foreground min-w-[200px] h-12 font-black uppercase text-xs tracking-widest shadow-xl shadow-primary/20 transition-transform active:scale-95">Initialize Job Node</Button>
+            <Button type="submit" className="w-full sm:w-auto bg-primary text-primary-foreground min-w-[200px] h-12 font-black uppercase text-xs tracking-widest shadow-xl shadow-primary/20">Finalize Cloud Job</Button>
           </div>
         </form>
       </Form>
