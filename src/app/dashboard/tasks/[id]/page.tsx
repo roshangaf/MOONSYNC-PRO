@@ -26,7 +26,7 @@ export default function TaskDetailPage() {
   const db = useFirestore()
   
   const taskRef = useMemoFirebase(() => db ? doc(db, 'tasks', id as string) : null, [db, id])
-  const { data: task, loading } = useDoc<Task>(taskRef)
+  const { data: task } = useDoc<Task>(taskRef)
 
   const usersQuery = useMemoFirebase(() => db ? collection(db, 'users') : null, [db])
   const { data: staffList = [] } = useCollection<UserType>(usersQuery)
@@ -64,11 +64,10 @@ export default function TaskDetailPage() {
     } else {
       clearInterval(interval);
     }
-    return () => clearInterval(interval);
+    return () => interval;
   }, [isLoggingTime]);
 
-  if (!task && loading) return null;
-  if (!task && !loading) return <div className="p-20 text-center font-bold">Task Terminal Error: Document Not Found</div>;
+  if (!task) return null;
 
   const handleAssign = () => {
     if (!db || !taskRef || !assigneeId) return;

@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useAuth } from '@/components/auth-context';
 import { Briefcase, Filter, Plus, Search, Download, Calendar, Trash2 } from 'lucide-react';
-import Link from 'link/next';
+import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import {
   DropdownMenu,

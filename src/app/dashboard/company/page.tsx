@@ -51,7 +51,7 @@ export default function CompanyPage() {
   const { toast } = useToast();
   
   const companyRef = useMemoFirebase(() => db ? doc(db, 'settings', 'company') : null, [db]);
-  const { data: companyProfile, loading } = useDoc<any>(companyRef);
+  const { data: companyProfile } = useDoc<any>(companyRef);
   
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -62,7 +62,7 @@ export default function CompanyPage() {
   useEffect(() => {
     if (companyProfile) {
       setTempData({ ...companyProfile });
-    } else if (!loading && !tempData) {
+    } else if (!tempData) {
       setTempData({
         name: "MoonSync Pro Terminal Systems",
         domain: "moonsyncpro.io",
@@ -73,7 +73,7 @@ export default function CompanyPage() {
         deptKeys: DEFAULT_DEPT_KEYS
       });
     }
-  }, [companyProfile, loading, tempData]);
+  }, [companyProfile, tempData]);
 
   const handleEdit = () => setIsEditing(true);
   const handleCancel = () => {
@@ -160,7 +160,7 @@ export default function CompanyPage() {
       });
   };
 
-  if (!tempData && loading) return null;
+  if (!tempData) return null;
 
   return (
     <div className="space-y-6 animate-fade-in pb-20">
