@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -26,6 +27,7 @@ export function useCollection<T = DocumentData>(query: Query<T> | null) {
 
     const currentQueryKey = (query as any)._query?.path?.segments?.join('/') || 'query';
     
+    // Only show loading if we have no existing data for this query
     if (lastQueryRef.current !== currentQueryKey && data.length === 0) {
       setLoading(true);
     }
