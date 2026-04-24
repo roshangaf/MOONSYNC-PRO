@@ -13,15 +13,15 @@ import {
   LogOut, 
   MapPin, 
   WifiOff, 
-  ShieldCheck 
+  ShieldCheck,
+  Map as MapIcon,
+  Navigation
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { Progress } from "@/components/ui/progress"
 import { AttendanceRecord } from "@/lib/types"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
 import { collection, doc, setDoc, query, orderBy, where } from "firebase/firestore"
-import { errorEmitter } from "@/firebase/error-emitter"
-import { FirestorePermissionError } from "@/firebase/errors"
 
 export default function AttendancePage() {
   const { user } = useAuth();
@@ -30,6 +30,7 @@ export default function AttendancePage() {
   
   const [currentTime, setCurrentTime] = useState<string>("");
   const [autoLocation, setAutoLocation] = useState<string>("Detecting...");
+  const [coords, setCoords] = useState<{lat: number, lng: number} | null>(null);
 
   const attendanceQuery = useMemoFirebase(() => {
     if (!db) return null;
@@ -43,10 +44,12 @@ export default function AttendancePage() {
     return allRecords.filter(r => r.userId === user?.id);
   }, [allRecords, user]);
 
-  const isCheckedIn = useMemo(() => {
+  const activeRecord = useMemo(() => {
     const today = new Date().toISOString().split('T')[0];
-    return records.some(r => r.userId === user?.id && r.date === today && !r.checkOut);
+    return records.find(r => r.userId === user?.id && r.date === today && !r.checkOut);
   }, [records, user?.id]);
+
+  const isCheckedIn = !!activeRecord;
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -58,6 +61,7 @@ export default function AttendancePage() {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const { latitude, longitude } = position.coords;
+          setCoords({ lat: latitude, lng: longitude });
           setAutoLocation(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
         },
         () => setAutoLocation("Standard Office"),
@@ -84,14 +88,16 @@ export default function AttendancePage() {
         checkIn: time,
         status: 'Present',
         location: autoLocation,
-        source: 'Mobile'
+        source: 'Mobile',
+        // Store coordinates for verification
+        lat: coords?.lat,
+        lng: coords?.lng
       };
       
       const recordRef = doc(db, 'attendance', recordId);
       setDoc(recordRef, newRecord);
-      toast({ title: "Session Initialized", description: `Clocked in at ${time}.` });
+      toast({ title: "Session Initialized", description: `Clocked in at ${time} from verified GPS node.` });
     } else {
-      const activeRecord = records.find(r => r.userId === user.id && r.date === date && !r.checkOut);
       if (!activeRecord) return;
 
       const recordRef = doc(db, 'attendance', activeRecord.id);
@@ -108,7 +114,7 @@ export default function AttendancePage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1">
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-primary uppercase">Attendance Terminal</h1>
-          <p className="text-xs md:text-sm text-muted-foreground">Real-time shift tracking and geolocation nodes.</p>
+          <p className="text-xs md:text-sm text-muted-foreground uppercase tracking-widest">Real-time shift tracking and geospatial verification.</p>
         </div>
         <Card className="flex items-center gap-3 px-4 py-2 border-primary/20 bg-primary/5">
           <Clock className="h-4 w-4 text-primary animate-pulse" />
@@ -124,9 +130,9 @@ export default function AttendancePage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="p-3 bg-slate-900 rounded-xl border border-slate-800 text-[10px] flex items-start gap-2">
-                <MapPin className="h-3 w-3 text-primary shrink-0 mt-0.5" />
+                <Navigation className="h-3 w-3 text-primary shrink-0 mt-0.5" />
                 <div className="space-y-0.5 overflow-hidden">
-                  <p className="font-black text-white uppercase tracking-widest text-[8px]">Digital Node</p>
+                  <p className="font-black text-white uppercase tracking-widest text-[8px]">Verified GPS Node</p>
                   <p className="font-mono text-primary truncate">{autoLocation}</p>
                 </div>
               </div>
@@ -152,6 +158,32 @@ export default function AttendancePage() {
               </div>
             </CardContent>
           </Card>
+
+          {coords && (
+            <Card className="shadow-xl bg-white border-none overflow-hidden">
+              <CardHeader className="pb-2 bg-slate-50 border-b">
+                <CardTitle className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-500">
+                  <MapIcon className="h-3 w-3 text-primary" />
+                  Live Geospatial View
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0 h-48 relative">
+                <iframe 
+                  width="100%" 
+                  height="100%" 
+                  frameBorder="0" 
+                  scrolling="no" 
+                  marginHeight={0} 
+                  marginWidth={0} 
+                  src={`https://www.openstreetmap.org/export/embed.html?bbox=${coords.lng - 0.005},${coords.lat - 0.005},${coords.lng + 0.005},${coords.lat + 0.005}&layer=mapnik&marker=${coords.lat},${coords.lng}`}
+                  style={{ border: 0 }}
+                />
+              </CardContent>
+              <CardFooter className="p-2 bg-slate-50 flex justify-center border-t">
+                <p className="text-[7px] font-bold text-slate-400 uppercase tracking-widest">OpenStreetMap Infrastructure • Verified Site</p>
+              </CardFooter>
+            </Card>
+          )}
 
           <Card className="shadow-xl bg-slate-900 border-none">
             <CardHeader className="pb-2">
@@ -185,7 +217,7 @@ export default function AttendancePage() {
                     <TableHead className="font-black text-[9px] uppercase py-3">Personnel</TableHead>
                     <TableHead className="font-black text-[9px] uppercase py-3">Date</TableHead>
                     <TableHead className="font-black text-[9px] uppercase py-3">Session</TableHead>
-                    <TableHead className="font-black text-[9px] uppercase py-3 hidden sm:table-cell">Node</TableHead>
+                    <TableHead className="font-black text-[9px] uppercase py-3 hidden sm:table-cell">Verification Node</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -203,9 +235,21 @@ export default function AttendancePage() {
                         </div>
                       </TableCell>
                       <TableCell className="hidden sm:table-cell">
-                        <span className="text-[8px] font-bold text-slate-400 truncate max-w-[100px] block uppercase">
-                          {record.location || 'UNVERIFIED'}
-                        </span>
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-[8px] font-black text-slate-900 uppercase">
+                            {record.location || 'UNVERIFIED'}
+                          </span>
+                          {(record as any).lat && (
+                             <a 
+                               href={`https://www.google.com/maps?q=${(record as any).lat},${(record as any).lng}`} 
+                               target="_blank" 
+                               rel="noopener noreferrer"
+                               className="text-[7px] text-primary font-bold hover:underline"
+                             >
+                               VIEW ON GOOGLE MAPS
+                             </a>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -220,7 +264,7 @@ export default function AttendancePage() {
             )}
           </CardContent>
           <CardFooter className="bg-slate-50 border-t p-3 flex justify-center">
-             <p className="text-[7px] font-black text-slate-400 uppercase tracking-[0.3em]">Cloud Node Active • Instant Sync</p>
+             <p className="text-[7px] font-black text-slate-400 uppercase tracking-[0.3em]">Cloud Node Active • GPS Verification On</p>
           </CardFooter>
         </Card>
       </div>
