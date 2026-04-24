@@ -28,6 +28,7 @@ export function useCollection<T = DocumentData>(query: Query<T> | null) {
     const currentQueryKey = (query as any)._query?.path?.segments?.join('/') || 'query';
     
     // Only set loading if we have absolutely no data for this query
+    // and it's a new query path
     if (lastQueryRef.current !== currentQueryKey && data.length === 0) {
       setLoading(true);
     }
@@ -41,7 +42,11 @@ export function useCollection<T = DocumentData>(query: Query<T> | null) {
           ...doc.data(),
           id: doc.id
         }));
+        
+        // Optimistic update: use cache immediately
         setData(items);
+        
+        // Only stop loading when we have the first snapshot (from cache or server)
         setLoading(false);
       },
       async (serverError: FirestoreError) => {

@@ -12,24 +12,27 @@ import {
 import { getAuth, Auth } from 'firebase/auth';
 import { firebaseConfig } from './config';
 
+let dbInstance: Firestore | null = null;
+
 export function initializeFirebase() {
   const app: FirebaseApp = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
   
-  let db: Firestore;
-  try {
-    // Enable high-speed persistent local cache for instant data availability
-    db = initializeFirestore(app, {
-      localCache: persistentLocalCache({
-        tabManager: persistentMultipleTabManager()
-      })
-    });
-  } catch (e) {
-    db = getFirestore(app);
+  if (!dbInstance) {
+    try {
+      // Enable high-speed persistent local cache for instant data availability
+      dbInstance = initializeFirestore(app, {
+        localCache: persistentLocalCache({
+          tabManager: persistentMultipleTabManager()
+        })
+      });
+    } catch (e) {
+      dbInstance = getFirestore(app);
+    }
   }
 
   const auth: Auth = getAuth(app);
   
-  return { app, db, auth };
+  return { app, db: dbInstance, auth };
 }
 
 export * from './provider';
