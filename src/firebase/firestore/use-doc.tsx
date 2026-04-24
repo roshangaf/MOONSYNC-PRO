@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { 
   DocumentReference, 
   onSnapshot, 
@@ -16,6 +15,8 @@ export function useDoc<T = DocumentData>(ref: DocumentReference<T> | null) {
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<FirestorePermissionError | null>(null);
+  
+  const lastPathRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!ref) {
@@ -23,7 +24,12 @@ export function useDoc<T = DocumentData>(ref: DocumentReference<T> | null) {
       return;
     }
 
-    setLoading(true);
+    // Only set loading to true if the path has changed to prevent UI flicker on re-renders
+    if (lastPathRef.current !== ref.path && !data) {
+      setLoading(true);
+    }
+    lastPathRef.current = ref.path;
+
     const unsubscribe = onSnapshot(
       ref,
       (snapshot: DocumentSnapshot<T>) => {
