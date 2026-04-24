@@ -56,9 +56,9 @@ export default function AttendancePage() {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const { latitude, longitude } = position.coords;
-          setAutoLocation(`COORD: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
+          setAutoLocation(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
         },
-        () => setAutoLocation("Manual Entry Required"),
+        () => setAutoLocation("Standard Office"),
         { enableHighAccuracy: true }
       );
     }
@@ -86,47 +86,27 @@ export default function AttendancePage() {
       };
       
       const recordRef = doc(db, 'attendance', recordId);
-      setDoc(recordRef, newRecord)
-        .then(() => {
-          toast({ title: "Check-in Synchronized", description: `Landmark Captured at ${time}.` });
-        })
-        .catch(async () => {
-          errorEmitter.emit('permission-error', new FirestorePermissionError({
-            path: recordRef.path,
-            operation: 'create',
-            requestResourceData: newRecord
-          }));
-        });
+      setDoc(recordRef, newRecord);
+      toast({ title: "Session Initialized", description: `Clocked in at ${time}.` });
     } else {
       const activeRecord = records.find(r => r.userId === user.id && r.date === date && !r.checkOut);
       if (!activeRecord) return;
 
       const recordRef = doc(db, 'attendance', activeRecord.id);
-      setDoc(recordRef, { checkOut: time }, { merge: true })
-        .then(() => {
-          toast({ title: "Session Terminated", description: `Check-out logged at ${time}.` });
-        })
-        .catch(async () => {
-          errorEmitter.emit('permission-error', new FirestorePermissionError({
-            path: recordRef.path,
-            operation: 'update',
-            requestResourceData: { checkOut: time }
-          }));
-        });
+      setDoc(recordRef, { checkOut: time }, { merge: true });
+      toast({ title: "Session Terminated", description: `Clocked out at ${time}.` });
     }
   };
 
   const presentCount = records.filter(r => r.status === 'Present').length;
   const attendancePercentage = records.length > 0 ? (presentCount / records.length) * 100 : 0;
 
-  if (loading) return <div className="p-20 text-center animate-pulse font-black uppercase tracking-widest text-primary">Synchronizing Cloud Attendance Ledger...</div>;
-
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1">
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-primary uppercase">Attendance Control</h1>
-          <p className="text-xs md:text-sm text-muted-foreground">Cloud-synchronized shift logs and geo-data landmarks.</p>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-primary uppercase">Attendance Terminal</h1>
+          <p className="text-xs md:text-sm text-muted-foreground">Real-time shift tracking and geolocation nodes.</p>
         </div>
         <Card className="flex items-center gap-3 px-4 py-2 border-primary/20 bg-primary/5">
           <Clock className="h-4 w-4 text-primary animate-pulse" />
@@ -144,27 +124,27 @@ export default function AttendancePage() {
               <div className="p-3 bg-slate-900 rounded-xl border border-slate-800 text-[10px] flex items-start gap-2">
                 <MapPin className="h-3 w-3 text-primary shrink-0 mt-0.5" />
                 <div className="space-y-0.5 overflow-hidden">
-                  <p className="font-black text-white uppercase tracking-widest text-[8px]">Digital Landmark</p>
+                  <p className="font-black text-white uppercase tracking-widest text-[8px]">Digital Node</p>
                   <p className="font-mono text-primary truncate">{autoLocation}</p>
                 </div>
               </div>
               <div className="flex flex-col gap-2">
                 {!isCheckedIn ? (
                   <Button 
-                    className="w-full h-14 text-sm font-black uppercase tracking-widest bg-primary hover:bg-primary/90 shadow-xl shadow-primary/20 transition-all active:scale-95"
+                    className="w-full h-14 text-sm font-black uppercase tracking-widest bg-primary hover:bg-primary/90 shadow-xl shadow-primary/20"
                     onClick={() => handleAction('check-in')}
                   >
                     <LogIn className="mr-2 h-4 w-4" />
-                    Check-In
+                    Initialize Shift
                   </Button>
                 ) : (
                   <Button 
                     variant="destructive"
-                    className="w-full h-14 text-sm font-black uppercase tracking-widest shadow-xl shadow-destructive/20 transition-all active:scale-95"
+                    className="w-full h-14 text-sm font-black uppercase tracking-widest shadow-xl shadow-destructive/20"
                     onClick={() => handleAction('check-out')}
                   >
                     <LogOut className="mr-2 h-4 w-4" />
-                    Check-Out
+                    Terminate Shift
                   </Button>
                 )}
               </div>
@@ -203,7 +183,7 @@ export default function AttendancePage() {
                     <TableHead className="font-black text-[9px] uppercase py-3">Personnel</TableHead>
                     <TableHead className="font-black text-[9px] uppercase py-3">Date</TableHead>
                     <TableHead className="font-black text-[9px] uppercase py-3">Session</TableHead>
-                    <TableHead className="font-black text-[9px] uppercase py-3 hidden sm:table-cell">Landmark</TableHead>
+                    <TableHead className="font-black text-[9px] uppercase py-3 hidden sm:table-cell">Node</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -230,15 +210,18 @@ export default function AttendancePage() {
                 </TableBody>
               </Table>
             </div>
-            {records.length === 0 && (
+            {records.length === 0 && !loading && (
               <div className="p-10 text-center flex flex-col items-center gap-2 opacity-30">
                 <WifiOff className="h-6 w-6" />
                 <p className="text-[9px] font-black uppercase tracking-widest">Cloud ledger empty.</p>
               </div>
             )}
+            {loading && (
+              <div className="p-10 text-center animate-pulse text-[9px] font-black uppercase tracking-widest text-primary">Synchronizing...</div>
+            )}
           </CardContent>
           <CardFooter className="bg-slate-50 border-t p-3 flex justify-center">
-             <p className="text-[7px] font-black text-slate-400 uppercase tracking-[0.3em]">Cloud Node Active • Sync Real-time</p>
+             <p className="text-[7px] font-black text-slate-400 uppercase tracking-[0.3em]">Cloud Node Active • Instant Sync</p>
           </CardFooter>
         </Card>
       </div>

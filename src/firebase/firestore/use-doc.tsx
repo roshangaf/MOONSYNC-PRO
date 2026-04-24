@@ -24,7 +24,6 @@ export function useDoc<T = DocumentData>(ref: DocumentReference<T> | null) {
       return;
     }
 
-    // Only set loading to true if the path has changed to prevent UI flicker on re-renders
     if (lastPathRef.current !== ref.path && !data) {
       setLoading(true);
     }
@@ -32,6 +31,7 @@ export function useDoc<T = DocumentData>(ref: DocumentReference<T> | null) {
 
     const unsubscribe = onSnapshot(
       ref,
+      { includeMetadataChanges: true },
       (snapshot: DocumentSnapshot<T>) => {
         setData(snapshot.exists() ? { ...snapshot.data(), id: snapshot.id } : null);
         setLoading(false);

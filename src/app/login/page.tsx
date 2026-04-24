@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useEffect } from "react"
@@ -7,13 +6,13 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Building2, ShieldCheck, Lock, ArrowRight, Loader2, Sparkles, User, Fingerprint } from "lucide-react"
+import { Building2, ShieldCheck, Lock, ArrowRight, Loader2, Sparkles, User as UserIcon, Fingerprint } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/components/auth-context"
-import { Role } from "@/lib/types"
-import { MOCK_USERS } from "@/lib/store"
+import { Role, User } from "@/lib/types"
+import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
+import { collection, query, where } from "firebase/firestore"
 
-// Default Keys fallback
 const DEFAULT_DEPT_KEYS: Record<Role, string> = {
   'Admin': 'SUPER-ADMIN-2024',
   'Marketing': 'CREATIVE-HUB-55',
@@ -35,25 +34,24 @@ export default function CompanyLoginPage() {
   const router = useRouter()
   const { toast } = useToast()
   const { login } = useAuth()
+  const db = useFirestore()
+
+  const usersQuery = useMemoFirebase(() => {
+    if (!db || !selectedRole) return null;
+    return query(collection(db, 'users'), where('role', '==', selectedRole));
+  }, [db, selectedRole]);
+
+  const { data: users = [] } = useCollection<User>(usersQuery);
 
   useEffect(() => {
     const companyVerified = localStorage.getItem('company_verified') === 'true';
     if (companyVerified) {
       setStep(2);
     }
-
-    // Load dynamic department keys from infrastructure
-    const savedKeys = localStorage.getItem('moonsync_dept_keys');
-    if (savedKeys) {
-      setDynamicDeptKeys(JSON.parse(savedKeys));
-    }
   }, []);
 
   const handleCompanyVerify = (e: React.FormEvent) => {
     e.preventDefault()
-    
-    // Logic to reset dashboard if company ID changes
-    const lastCompany = localStorage.getItem('moonsync_last_company');
     const currentDomain = domain.trim().toLowerCase();
 
     if (!currentDomain.includes("moonsync")) {
@@ -67,31 +65,14 @@ export default function CompanyLoginPage() {
     
     setIsVerifying(true)
     setTimeout(() => {
-      // If domain has changed, purge all data for the new company session
-      if (lastCompany && lastCompany !== currentDomain) {
-        localStorage.removeItem('moonsync_tasks');
-        localStorage.removeItem('moonsync_bills');
-        localStorage.removeItem('moonsync_attendance');
-        localStorage.removeItem('moonsync_company_profile');
-        localStorage.removeItem('moonsync_dept_keys');
-        localStorage.removeItem('performa_user');
-        localStorage.removeItem('moonsync_was_reset'); // Clear reset flag for new company
-        
-        toast({
-          title: "New Company Context Detected",
-          description: "Terminal data has been reset for the new organizational ID.",
-        });
-      }
-
       setIsVerifying(false)
       setStep(2)
-      localStorage.setItem('moonsync_last_company', currentDomain);
       localStorage.setItem('company_verified', 'true');
       toast({
         title: "Access Granted",
         description: "Company credentials verified. Please select your terminal role.",
       })
-    }, 1200)
+    }, 800)
   }
 
   const handleRoleSelect = (role: Role) => {
@@ -112,20 +93,16 @@ export default function CompanyLoginPage() {
       return
     }
 
-    setIsVerifying(true)
-    setTimeout(() => {
-      setIsVerifying(false)
-      setStep(4)
-      toast({
-        title: "Department Unlocked",
-        description: "Please verify your personal identity to establish a session.",
-      })
-    }, 800)
+    setStep(4)
+    toast({
+      title: "Department Unlocked",
+      description: "Please verify your personal identity.",
+    })
   }
 
   const handlePersonalLogin = (e: React.FormEvent) => {
     e.preventDefault()
-    const foundUser = MOCK_USERS.find(u => u.id === selectedUserId);
+    const foundUser = users.find(u => u.id === selectedUserId);
 
     if (!foundUser || personalPin !== foundUser.pin) {
       toast({
@@ -137,16 +114,11 @@ export default function CompanyLoginPage() {
     }
 
     setIsVerifying(true)
-    setTimeout(() => {
-      setIsVerifying(false)
-      if (selectedRole) {
-        login(selectedRole); 
-        toast({
-          title: "Session Initialized",
-          description: `Authorized as ${foundUser.name} in ${selectedRole} Department.`,
-        })
-      }
-    }, 1000)
+    login(foundUser); 
+    toast({
+      title: "Session Initialized",
+      description: `Authorized as ${foundUser.name} in ${selectedRole} Department.`,
+    })
   }
 
   const handleReset = () => {
@@ -157,10 +129,6 @@ export default function CompanyLoginPage() {
     setPersonalPin("");
     setSelectedUserId("");
   };
-
-  const filteredUsers = selectedRole 
-    ? MOCK_USERS.filter(u => u.role === selectedRole)
-    : [];
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-6 font-body">
@@ -271,15 +239,13 @@ export default function CompanyLoginPage() {
                     autoFocus
                     required
                   />
-                  <p className="text-[9px] text-muted-foreground font-medium italic">High-entropy verification required for {selectedRole} nodes.</p>
                 </div>
                 <div className="flex flex-col gap-3">
                   <Button 
                     type="submit" 
                     className="w-full h-12 bg-primary hover:bg-primary/90 font-bold shadow-lg shadow-primary/20 rounded-xl"
-                    disabled={isVerifying}
                   >
-                    {isVerifying ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Unlock Department"}
+                    Unlock Department
                   </Button>
                   <Button 
                     type="button"
@@ -298,7 +264,7 @@ export default function CompanyLoginPage() {
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <label className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
-                      <User className="w-3 h-3" />
+                      <UserIcon className="w-3 h-3" />
                       Logged in as
                     </label>
                     <Select value={selectedUserId} onValueChange={setSelectedUserId}>
@@ -306,7 +272,7 @@ export default function CompanyLoginPage() {
                         <SelectValue placeholder="Select Personnel Identity" />
                       </SelectTrigger>
                       <SelectContent>
-                        {filteredUsers.map(u => (
+                        {users.map(u => (
                           <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>
                         ))}
                       </SelectContent>
@@ -351,7 +317,7 @@ export default function CompanyLoginPage() {
             )}
             
             <p className="text-[10px] text-center text-slate-400 uppercase tracking-widest font-bold mt-6">
-              {step >= 3 ? "Active Departmental Shield Engaged" : "Encryption Layer Active"}
+              Encryption Layer Active
             </p>
          </CardContent>
        </Card>

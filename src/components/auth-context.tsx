@@ -1,14 +1,14 @@
-
 "use client"
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, Role } from '@/lib/types';
-import { MOCK_USERS } from '@/lib/store';
 import { useRouter } from 'next/navigation';
+import { useFirestore } from '@/firebase';
+import { doc, onSnapshot } from 'firebase/firestore';
 
 interface AuthContextType {
   user: User | null;
-  login: (role: Role) => void;
+  login: (userData: User) => void;
   logout: () => void;
   isLoading: boolean;
 }
@@ -19,27 +19,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
+  const db = useFirestore();
 
   useEffect(() => {
-    const savedUser = localStorage.getItem('performa_user');
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
+    const savedUserId = localStorage.getItem('moonsync_user_id');
+    if (savedUserId && db) {
+      const userRef = doc(db, 'users', savedUserId);
+      const unsubscribe = onSnapshot(userRef, (snapshot) => {
+        if (snapshot.exists()) {
+          setUser({ ...snapshot.data(), id: snapshot.id } as User);
+        } else {
+          setUser(null);
+          localStorage.removeItem('moonsync_user_id');
+        }
+        setIsLoading(false);
+      }, () => {
+        setIsLoading(false);
+      });
+      return () => unsubscribe();
+    } else {
+      setIsLoading(false);
     }
-    setIsLoading(false);
-  }, []);
+  }, [db]);
 
-  const login = (role: Role) => {
-    const foundUser = MOCK_USERS.find(u => u.role === role) || MOCK_USERS[0];
-    setUser(foundUser);
-    localStorage.setItem('performa_user', JSON.stringify(foundUser));
+  const login = (userData: User) => {
+    setUser(userData);
+    localStorage.setItem('moonsync_user_id', userData.id);
     router.push('/dashboard');
   };
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem('performa_user');
-    // Redirect to login page - the login page will handle starting at Step 2
-    // if the company is still verified in its own state.
+    localStorage.removeItem('moonsync_user_id');
     router.push('/login');
   };
 

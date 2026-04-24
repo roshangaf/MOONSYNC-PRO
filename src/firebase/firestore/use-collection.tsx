@@ -16,7 +16,6 @@ export function useCollection<T = DocumentData>(query: Query<T> | null) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<FirestorePermissionError | null>(null);
   
-  // Track the query to avoid resetting data when query stays stable
   const lastQueryRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -27,7 +26,6 @@ export function useCollection<T = DocumentData>(query: Query<T> | null) {
 
     const currentQueryKey = (query as any)._query?.path?.segments?.join('/') || 'query';
     
-    // Only set loading if the query path has actually changed or we have no data
     if (lastQueryRef.current !== currentQueryKey && data.length === 0) {
       setLoading(true);
     }
@@ -36,6 +34,7 @@ export function useCollection<T = DocumentData>(query: Query<T> | null) {
 
     const unsubscribe = onSnapshot(
       query,
+      { includeMetadataChanges: true },
       (snapshot: QuerySnapshot<T>) => {
         const items = snapshot.docs.map(doc => ({
           ...doc.data(),
