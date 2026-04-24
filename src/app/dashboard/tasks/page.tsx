@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -7,9 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { MOCK_USERS } from '@/lib/store';
 import { useAuth } from '@/components/auth-context';
-import { Briefcase, Filter, Plus, Search, Download, Calendar, Info, Trash2 } from 'lucide-react';
+import { Briefcase, Filter, Plus, Search, Download, Calendar, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -23,7 +21,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Task } from '@/lib/types';
-import { useCollection, useFirestore } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, doc, deleteDoc } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -32,7 +30,9 @@ export default function TasksPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const db = useFirestore();
-  const { data: tasks = [], loading } = useCollection<Task>(db ? collection(db, 'tasks') : null);
+  
+  const tasksRef = useMemoFirebase(() => db ? collection(db, 'tasks') : null, [db]);
+  const { data: tasks = [], loading } = useCollection<Task>(tasksRef);
   
   const [searchTerm, setSearchTerm] = useState("");
   const [filterPriority, setFilterPriority] = useState<string[]>([]);

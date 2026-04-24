@@ -1,20 +1,23 @@
-
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useAuth } from "@/components/auth-context"
 import { Briefcase, CheckCircle2, Clock, ListTodo, Users, TrendingUp, Inbox } from "lucide-react"
 import { MOCK_USERS } from "@/lib/store"
 import { Task } from "@/lib/types"
-import { useFirestore, useCollection } from "@/firebase"
+import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
 import { collection, query, orderBy, limit } from "firebase/firestore"
 
 export default function DashboardPage() {
   const { user } = useAuth();
   const db = useFirestore();
 
-  const tasksQuery = useMemo(() => db ? query(collection(db, 'tasks'), orderBy('createdAt', 'desc')) : null, [db]);
+  const tasksQuery = useMemoFirebase(() => {
+    if (!db) return null;
+    return query(collection(db, 'tasks'), orderBy('createdAt', 'desc'), limit(10));
+  }, [db]);
+  
   const { data: tasks = [], loading } = useCollection<Task>(tasksQuery);
 
   const activeTasksCount = tasks.filter(t => t.status !== 'Completed').length;

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -10,9 +9,6 @@ import { Badge } from '@/components/ui/badge';
 import { 
   Building2, 
   Globe, 
-  Mail, 
-  MapPin, 
-  Phone, 
   ShieldCheck, 
   Edit2, 
   Save, 
@@ -21,10 +17,7 @@ import {
   Key, 
   ShieldAlert,
   Download,
-  Database,
-  FileSpreadsheet,
-  Trash2,
-  AlertTriangle
+  Trash2
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Role } from '@/lib/types';
@@ -40,7 +33,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { useDoc, useFirestore } from '@/firebase';
+import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { doc, setDoc, collection, getDocs, writeBatch } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -55,7 +48,9 @@ const DEFAULT_DEPT_KEYS: Record<Role, string> = {
 export default function CompanyPage() {
   const db = useFirestore();
   const { toast } = useToast();
-  const { data: companyProfile, loading } = useDoc<any>(db ? doc(db, 'settings', 'company') : null);
+  
+  const companyRef = useMemoFirebase(() => db ? doc(db, 'settings', 'company') : null, [db]);
+  const { data: companyProfile, loading } = useDoc<any>(companyRef);
   
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -66,7 +61,7 @@ export default function CompanyPage() {
   useEffect(() => {
     if (companyProfile) {
       setTempData({ ...companyProfile });
-    } else {
+    } else if (!loading) {
       setTempData({
         name: "MoonSync Pro Terminal Systems",
         domain: "moonsyncpro.io",
@@ -77,7 +72,7 @@ export default function CompanyPage() {
         deptKeys: DEFAULT_DEPT_KEYS
       });
     }
-  }, [companyProfile]);
+  }, [companyProfile, loading]);
 
   const handleEdit = () => setIsEditing(true);
   const handleCancel = () => {
@@ -86,9 +81,8 @@ export default function CompanyPage() {
   };
 
   const handleSave = () => {
-    if (!db || !tempData) return;
+    if (!db || !tempData || !companyRef) return;
     setIsSaving(true);
-    const companyRef = doc(db, 'settings', 'company');
     
     setDoc(companyRef, tempData, { merge: true })
       .then(() => {
