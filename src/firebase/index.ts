@@ -1,3 +1,4 @@
+
 'use client';
 
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
@@ -16,14 +17,13 @@ export function initializeFirebase() {
   
   let db: Firestore;
   try {
-    // Enable persistent local cache for "faster than ever" data access
+    // Enable high-speed persistent local cache for instant data availability
     db = initializeFirestore(app, {
       localCache: persistentLocalCache({
         tabManager: persistentMultipleTabManager()
       })
     });
   } catch (e) {
-    // If already initialized, get the existing instance
     db = getFirestore(app);
   }
 

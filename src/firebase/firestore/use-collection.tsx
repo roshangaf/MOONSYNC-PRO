@@ -14,7 +14,7 @@ import { FirestorePermissionError } from '../errors';
 
 export function useCollection<T = DocumentData>(query: Query<T> | null) {
   const [data, setData] = useState<T[]>([]);
-  const [loading, setLoading] = useState(!!query);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<FirestorePermissionError | null>(null);
   
   const lastQueryRef = useRef<string | null>(null);
@@ -27,11 +27,10 @@ export function useCollection<T = DocumentData>(query: Query<T> | null) {
 
     const currentQueryKey = (query as any)._query?.path?.segments?.join('/') || 'query';
     
-    // Only show loading if we have no existing data for this query path
+    // Only set loading if we have absolutely no data for this query
     if (lastQueryRef.current !== currentQueryKey && data.length === 0) {
       setLoading(true);
     }
-    
     lastQueryRef.current = currentQueryKey;
 
     const unsubscribe = onSnapshot(

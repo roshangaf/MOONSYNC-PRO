@@ -9,21 +9,23 @@ import { useEffect } from "react"
 import { Separator } from "@/components/ui/separator"
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb"
 import { useFirestore, useMemoFirebase, useCollection } from "@/firebase"
-import { collection, query, limit, orderBy } from "firebase/firestore"
+import { collection, query, orderBy } from "firebase/firestore"
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
   const db = useFirestore();
 
-  // Cache Warming: Pre-fetch core collections with exact queries used in pages to prime the persistent local cache
+  // HIGH-SPEED CACHE WARMING: Establish background listeners for instant sub-page loading
   const tasksQuery = useMemoFirebase(() => db ? query(collection(db, 'tasks'), orderBy('createdAt', 'desc')) : null, [db]);
   const usersQuery = useMemoFirebase(() => db ? collection(db, 'users') : null, [db]);
   const attendanceQuery = useMemoFirebase(() => db ? query(collection(db, 'attendance'), orderBy('date', 'desc')) : null, [db]);
+  const billsQuery = useMemoFirebase(() => db ? query(collection(db, 'bills'), orderBy('createdAt', 'desc')) : null, [db]);
   
-  // These hooks establish real-time listeners that stay active while the user is in the dashboard
+  // Prime the persistent cache for all core terminals
   useCollection(tasksQuery);
   useCollection(usersQuery);
   useCollection(attendanceQuery);
+  useCollection(billsQuery);
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -31,7 +33,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
   }, [user, isLoading]);
 
-  if (isLoading || !user) return <div className="h-screen w-screen flex items-center justify-center font-black uppercase tracking-widest text-primary animate-pulse">Initializing MoonSync Pro...</div>;
+  if (isLoading || !user) return <div className="h-screen w-screen flex items-center justify-center font-black uppercase tracking-widest text-primary">Establishing Cloud Handshake...</div>;
 
   return (
     <SidebarProvider>
@@ -54,7 +56,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </Breadcrumb>
           </div>
         </header>
-        <main className="flex flex-1 flex-col gap-4 p-4 md:p-8 animate-fade-in w-full max-w-full">
+        <main className="flex flex-1 flex-col gap-4 p-4 md:p-8 w-full max-w-full">
           {children}
         </main>
       </SidebarInset>

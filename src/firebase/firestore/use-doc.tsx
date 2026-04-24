@@ -14,7 +14,7 @@ import { FirestorePermissionError } from '../errors';
 
 export function useDoc<T = DocumentData>(ref: DocumentReference<T> | null) {
   const [data, setData] = useState<T | null>(null);
-  const [loading, setLoading] = useState(!!ref);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<FirestorePermissionError | null>(null);
   
   const lastPathRef = useRef<string | null>(null);
@@ -34,7 +34,7 @@ export function useDoc<T = DocumentData>(ref: DocumentReference<T> | null) {
       ref,
       { includeMetadataChanges: true },
       (snapshot: DocumentSnapshot<T>) => {
-        setData(snapshot.exists() ? { ...snapshot.data(), id: snapshot.id } : null);
+        setData(snapshot.exists() ? { ...snapshot.data(), id: snapshot.id } as T : null);
         setLoading(false);
       },
       async (serverError: FirestoreError) => {
