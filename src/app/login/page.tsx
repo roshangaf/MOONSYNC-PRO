@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Building2, ShieldCheck, Lock, ArrowRight, Loader2, Sparkles, User as UserIcon, Fingerprint, ShieldAlert } from "lucide-react"
+import { Building2, ShieldCheck, Lock, ArrowRight, Loader2, User as UserIcon, Fingerprint, ShieldAlert } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/components/auth-context"
 import { Role, User } from "@/lib/types"
@@ -30,7 +30,6 @@ export default function CompanyLoginPage() {
   const [isVerifying, setIsVerifying] = useState(false)
   const [step, setStep] = useState(1)
   const [selectedRole, setSelectedRole] = useState<Role | null>(null)
-  const [dynamicDeptKeys, setDynamicDeptKeys] = useState<Record<Role, string>>(DEFAULT_DEPT_KEYS)
   
   const router = useRouter()
   const { toast } = useToast()
@@ -70,7 +69,6 @@ export default function CompanyLoginPage() {
       return
     }
     
-    // No artificial delay for maximum speed
     setStep(2)
     localStorage.setItem('company_verified', 'true');
     toast({
@@ -88,7 +86,7 @@ export default function CompanyLoginPage() {
     e.preventDefault()
     if (!selectedRole) return;
 
-    if (deptKey !== dynamicDeptKeys[selectedRole]) {
+    if (deptKey !== DEFAULT_DEPT_KEYS[selectedRole]) {
       toast({
         title: "Invalid Department Signature",
         description: `Incorrect key for the ${selectedRole} hub.`,
@@ -119,10 +117,6 @@ export default function CompanyLoginPage() {
 
     setIsVerifying(true)
     login(foundUser); 
-    toast({
-      title: "Authorized",
-      description: `Terminal active: ${foundUser.name}`,
-    })
   }
 
   const handleSeedAdmin = async () => {
@@ -139,12 +133,13 @@ export default function CompanyLoginPage() {
     };
     
     const userRef = doc(db, 'users', adminId);
-    setDoc(userRef, adminData);
-    toast({
-      title: "Admin Initialized",
-      description: "Roshan Admin created with PIN 0000.",
+    setDoc(userRef, adminData).then(() => {
+      toast({
+        title: "Admin Initialized",
+        description: "Roshan Admin created with PIN 0000.",
+      });
+      setIsVerifying(false);
     });
-    setIsVerifying(false);
   };
 
   const handleReset = () => {
@@ -161,7 +156,7 @@ export default function CompanyLoginPage() {
        <div className="fixed inset-0 mesh-gradient -z-10" />
        
        <Card className="w-full max-w-md glass border-white/20 shadow-2xl animate-fade-in overflow-hidden">
-         <div className="h-2 bg-primary animate-pulse-slow" />
+         <div className="h-2 bg-primary" />
          <CardHeader className="text-center space-y-4 pt-10">
            <div className="mx-auto w-16 h-16 bg-primary rounded-2xl flex items-center justify-center shadow-lg shadow-primary/20 rotate-3 hover:rotate-0 transition-transform duration-500">
              {step >= 3 ? <ShieldCheck className="w-10 h-10 text-white" /> : <Building2 className="w-10 h-10 text-white" />}

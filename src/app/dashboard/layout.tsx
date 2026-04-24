@@ -8,17 +8,29 @@ import { redirect } from "next/navigation"
 import { useEffect } from "react"
 import { Separator } from "@/components/ui/separator"
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb"
+import { useFirestore, useMemoFirebase, useCollection } from "@/firebase"
+import { collection, query, limit } from "firebase/firestore"
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
+  const db = useFirestore();
+
+  // Cache Warming: Pre-fetch core collections to prime the persistent local cache
+  const tasksRef = useMemoFirebase(() => db ? query(collection(db, 'tasks'), limit(50)) : null, [db]);
+  const usersRef = useMemoFirebase(() => db ? collection(db, 'users') : null, [db]);
+  const attendanceRef = useMemoFirebase(() => db ? query(collection(db, 'attendance'), limit(20)) : null, [db]);
+  
+  useCollection(tasksRef);
+  useCollection(usersRef);
+  useCollection(attendanceRef);
 
   useEffect(() => {
     if (!isLoading && !user) {
-      redirect('/');
+      redirect('/login');
     }
   }, [user, isLoading]);
 
-  if (isLoading || !user) return <div className="h-screen w-screen flex items-center justify-center font-black uppercase tracking-widest text-primary animate-pulse">Loading MoonSync Pro...</div>;
+  if (isLoading || !user) return <div className="h-screen w-screen flex items-center justify-center font-black uppercase tracking-widest text-primary animate-pulse">Initializing MoonSync Pro...</div>;
 
   return (
     <SidebarProvider>
