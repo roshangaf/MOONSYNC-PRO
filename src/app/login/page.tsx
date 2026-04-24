@@ -58,19 +58,13 @@ export default function CompanyLoginPage() {
     e.preventDefault()
     const currentDomain = domain.trim().toLowerCase();
 
-    if (!currentDomain.includes("moonsync")) {
-      toast({
-        title: "Invalid Company",
-        description: "Please enter 'MoonSync Pro'.",
-        variant: "destructive"
-      })
-      return
-    }
+    const isValidMoonSync = currentDomain.includes("moonsync") && token === "0621";
+    const isValidMansa = currentDomain.includes("mansa") && token === "6767";
 
-    if (token !== "0621") {
+    if (!isValidMoonSync && !isValidMansa) {
       toast({
         title: "Security Violation",
-        description: "Invalid security token. Access denied.",
+        description: "Invalid company domain or security token.",
         variant: "destructive"
       })
       return
@@ -83,7 +77,7 @@ export default function CompanyLoginPage() {
       localStorage.setItem('company_verified', 'true');
       toast({
         title: "Access Granted",
-        description: "Cloud handshake successful. Welcome to MoonSync Pro.",
+        description: "Cloud handshake successful. Welcome to the terminal.",
       })
     }, 800)
   }
@@ -190,7 +184,7 @@ export default function CompanyLoginPage() {
              </CardTitle>
              <CardDescription className="text-slate-500 font-medium">
                {step === 1 
-                 ? "Establish a secure cloud link with MoonSync infrastructure." 
+                 ? "Establish a secure cloud link with the organization infrastructure." 
                  : step === 2 
                  ? "Select your departmental terminal signature."
                  : step === 3
@@ -208,11 +202,12 @@ export default function CompanyLoginPage() {
                     Company Name
                   </label>
                   <Input 
-                    placeholder="MoonSync Pro" 
+                    placeholder="Mansa Tech / MoonSync Pro" 
                     className="h-12 bg-white/50 border-slate-200 focus:ring-primary/20 rounded-xl font-bold"
                     value={domain}
                     onChange={(e) => setDomain(e.target.value)}
                     required
+                    autoComplete="off"
                   />
                 </div>
                 <div className="space-y-2">
@@ -222,11 +217,12 @@ export default function CompanyLoginPage() {
                   </label>
                   <Input 
                     type="password"
-                    placeholder="Enter Token (0621)" 
+                    placeholder="Enter Token" 
                     className="h-12 bg-white/50 border-slate-200 focus:ring-primary/20 rounded-xl font-mono"
                     value={token}
                     onChange={(e) => setToken(e.target.value)}
                     required
+                    autoComplete="new-password"
                   />
                 </div>
                 <Button 
@@ -295,6 +291,7 @@ export default function CompanyLoginPage() {
                     onChange={(e) => setDeptKey(e.target.value)}
                     autoFocus
                     required
+                    autoComplete="new-password"
                   />
                 </div>
                 <div className="flex flex-col gap-3">
@@ -349,6 +346,7 @@ export default function CompanyLoginPage() {
                       onChange={(e) => setPersonalPin(e.target.value)}
                       maxLength={4}
                       required
+                      autoComplete="new-password"
                     />
                   </div>
                 </div>
