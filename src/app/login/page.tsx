@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect } from "react"
@@ -6,12 +7,12 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Building2, ShieldCheck, Lock, ArrowRight, Loader2, Sparkles, User as UserIcon, Fingerprint } from "lucide-react"
+import { Building2, ShieldCheck, Lock, ArrowRight, Loader2, Sparkles, User as UserIcon, Fingerprint, ShieldAlert } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/components/auth-context"
 import { Role, User } from "@/lib/types"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
-import { collection, query, where } from "firebase/firestore"
+import { collection, query, where, doc, setDoc } from "firebase/firestore"
 
 const DEFAULT_DEPT_KEYS: Record<Role, string> = {
   'Admin': 'SUPER-ADMIN-2024',
@@ -36,6 +37,9 @@ export default function CompanyLoginPage() {
   const { login } = useAuth()
   const db = useFirestore()
 
+  const allUsersQuery = useMemoFirebase(() => db ? collection(db, 'users') : null, [db]);
+  const { data: allUsers = [] } = useCollection<User>(allUsersQuery);
+
   const usersQuery = useMemoFirebase(() => {
     if (!db || !selectedRole) return null;
     return query(collection(db, 'users'), where('role', '==', selectedRole));
@@ -57,7 +61,16 @@ export default function CompanyLoginPage() {
     if (!currentDomain.includes("moonsync")) {
       toast({
         title: "Invalid Company",
-        description: "Please enter your registered company name (e.g. MoonSync Pro).",
+        description: "Please enter 'MoonSync Pro'.",
+        variant: "destructive"
+      })
+      return
+    }
+
+    if (token !== "0621") {
+      toast({
+        title: "Security Violation",
+        description: "Invalid security token. Access denied.",
         variant: "destructive"
       })
       return
@@ -70,7 +83,7 @@ export default function CompanyLoginPage() {
       localStorage.setItem('company_verified', 'true');
       toast({
         title: "Access Granted",
-        description: "Company credentials verified. Please select your terminal role.",
+        description: "Cloud handshake successful. Welcome to MoonSync Pro.",
       })
     }, 800)
   }
@@ -87,7 +100,7 @@ export default function CompanyLoginPage() {
     if (deptKey !== dynamicDeptKeys[selectedRole]) {
       toast({
         title: "Invalid Department Signature",
-        description: `The access key for ${selectedRole} is incorrect.`,
+        description: `Incorrect key for the ${selectedRole} hub.`,
         variant: "destructive"
       })
       return
@@ -96,7 +109,7 @@ export default function CompanyLoginPage() {
     setStep(4)
     toast({
       title: "Department Unlocked",
-      description: "Please verify your personal identity.",
+      description: "Verify your personnel identity to continue.",
     })
   }
 
@@ -106,8 +119,8 @@ export default function CompanyLoginPage() {
 
     if (!foundUser || personalPin !== foundUser.pin) {
       toast({
-        title: "Identity Verification Failed",
-        description: "The personal PIN provided does not match our records.",
+        title: "Verification Failed",
+        description: "Invalid PIN for the selected identity.",
         variant: "destructive"
       })
       return
@@ -116,10 +129,41 @@ export default function CompanyLoginPage() {
     setIsVerifying(true)
     login(foundUser); 
     toast({
-      title: "Session Initialized",
-      description: `Authorized as ${foundUser.name} in ${selectedRole} Department.`,
+      title: "Session Authorized",
+      description: `Terminal active for ${foundUser.name}.`,
     })
   }
+
+  const handleSeedAdmin = async () => {
+    if (!db) return;
+    setIsVerifying(true);
+    const adminId = 'ADMIN-ROSHAN';
+    const adminData: User = {
+      id: adminId,
+      name: 'Roshan Admin',
+      email: 'roshan@moonsyncpro.io',
+      role: 'Admin',
+      department: 'Administration',
+      pin: '0000'
+    };
+    
+    const userRef = doc(db, 'users', adminId);
+    try {
+      await setDoc(userRef, adminData);
+      toast({
+        title: "Admin Initialized",
+        description: "Roshan Admin created with PIN 0000. Use this to login.",
+      });
+    } catch (e) {
+      toast({
+        title: "Initialization Error",
+        description: "Failed to seed admin user.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsVerifying(false);
+    }
+  };
 
   const handleReset = () => {
     setStep(1);
@@ -141,17 +185,17 @@ export default function CompanyLoginPage() {
              {step >= 3 ? <ShieldCheck className="w-10 h-10 text-white" /> : <Building2 className="w-10 h-10 text-white" />}
            </div>
            <div>
-             <CardTitle className="text-2xl font-black tracking-tight text-slate-900">
-               {step === 1 ? "Company Access" : step === 2 ? "Terminal Selection" : step === 3 ? `${selectedRole} Access` : "Identity Verification"}
+             <CardTitle className="text-2xl font-black tracking-tight text-slate-900 uppercase">
+               {step === 1 ? "Company Access" : step === 2 ? "Terminal Selection" : step === 3 ? `${selectedRole} HUB` : "Identity Sync"}
              </CardTitle>
-             <CardDescription className="text-slate-500">
+             <CardDescription className="text-slate-500 font-medium">
                {step === 1 
-                 ? "Establish a secure link with the MoonSync infrastructure." 
+                 ? "Establish a secure cloud link with MoonSync infrastructure." 
                  : step === 2 
-                 ? "Select your departmental signature to continue."
+                 ? "Select your departmental terminal signature."
                  : step === 3
-                 ? `Enter the unique access key for the ${selectedRole} hub.`
-                 : "Select your name and enter your personal security PIN."}
+                 ? `Enter the unique access key for the ${selectedRole} node.`
+                 : "Select your identity and verify your security PIN."}
              </CardDescription>
            </div>
          </CardHeader>
@@ -159,27 +203,27 @@ export default function CompanyLoginPage() {
             {step === 1 && (
               <form onSubmit={handleCompanyVerify} className="space-y-6">
                 <div className="space-y-2">
-                  <label className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
                     <ShieldCheck className="w-3 h-3" />
                     Company Name
                   </label>
                   <Input 
                     placeholder="MoonSync Pro" 
-                    className="h-12 bg-white/50 border-slate-200 focus:ring-primary/20 rounded-xl"
+                    className="h-12 bg-white/50 border-slate-200 focus:ring-primary/20 rounded-xl font-bold"
                     value={domain}
                     onChange={(e) => setDomain(e.target.value)}
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
                     <Lock className="w-3 h-3" />
                     Security Token
                   </label>
                   <Input 
                     type="password"
-                    placeholder="••••••••••••" 
-                    className="h-12 bg-white/50 border-slate-200 focus:ring-primary/20 rounded-xl"
+                    placeholder="Enter Token (0621)" 
+                    className="h-12 bg-white/50 border-slate-200 focus:ring-primary/20 rounded-xl font-mono"
                     value={token}
                     onChange={(e) => setToken(e.target.value)}
                     required
@@ -187,11 +231,11 @@ export default function CompanyLoginPage() {
                 </div>
                 <Button 
                   type="submit" 
-                  className="w-full h-12 bg-primary hover:bg-primary/90 font-bold shadow-lg shadow-primary/20 rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
+                  className="w-full h-14 bg-primary hover:bg-primary/90 font-black uppercase tracking-widest shadow-xl shadow-primary/20 rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
                   disabled={isVerifying}
                 >
                   {isVerifying ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                  Initialize Handshake
+                  Establish Handshake
                 </Button>
               </form>
             )}
@@ -202,23 +246,36 @@ export default function CompanyLoginPage() {
                   <Button 
                     key={role}
                     variant="outline" 
-                    className="h-16 justify-between px-6 hover:bg-primary hover:text-white hover:border-primary transition-all duration-300 border-slate-200 bg-white/50 group rounded-xl"
+                    className="h-20 justify-between px-6 hover:bg-primary hover:text-white hover:border-primary transition-all duration-300 border-slate-200 bg-white/50 group rounded-xl"
                     onClick={() => handleRoleSelect(role)}
                   >
                     <div className="flex flex-col items-start text-left">
                         <span className="font-black text-sm uppercase tracking-tighter">{role}</span>
-                        <span className="text-[10px] opacity-70 font-bold uppercase tracking-widest">Departmental Signature</span>
+                        <span className="text-[9px] opacity-70 font-bold uppercase tracking-[0.2em]">Cloud Node</span>
                     </div>
                     <ArrowRight className="w-5 h-5 opacity-30 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
                   </Button>
                 ))}
+                
+                {allUsers.length === 0 && (
+                  <Button 
+                    variant="outline" 
+                    className="mt-6 border-dashed border-accent text-accent hover:bg-accent hover:text-white font-black uppercase text-[10px] tracking-widest h-14 rounded-xl"
+                    onClick={handleSeedAdmin}
+                    disabled={isVerifying}
+                  >
+                    <ShieldAlert className="mr-2 h-4 w-4" />
+                    Initialize First Admin
+                  </Button>
+                )}
+
                 <Button 
                     variant="ghost" 
                     size="sm" 
-                    className="mt-4 text-xs font-bold text-slate-400 uppercase tracking-widest hover:text-primary transition-colors"
+                    className="mt-4 text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] hover:text-primary transition-colors"
                     onClick={handleReset}
                 >
-                    Reset Handshake
+                    Reset Connection
                 </Button>
               </div>
             )}
@@ -226,9 +283,9 @@ export default function CompanyLoginPage() {
             {step === 3 && (
               <form onSubmit={handleDeptVerify} className="space-y-6">
                 <div className="space-y-2">
-                  <label className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
                     <Lock className="w-3 h-3" />
-                    Departmental Access Key
+                    Department Access Key
                   </label>
                   <Input 
                     type="password"
@@ -243,17 +300,17 @@ export default function CompanyLoginPage() {
                 <div className="flex flex-col gap-3">
                   <Button 
                     type="submit" 
-                    className="w-full h-12 bg-primary hover:bg-primary/90 font-bold shadow-lg shadow-primary/20 rounded-xl"
+                    className="w-full h-14 bg-primary font-black uppercase tracking-widest shadow-xl rounded-xl"
                   >
-                    Unlock Department
+                    Unlock Hub
                   </Button>
                   <Button 
                     type="button"
                     variant="ghost"
-                    className="text-xs font-bold uppercase tracking-widest text-slate-400"
+                    className="text-[10px] font-black uppercase tracking-widest text-slate-400"
                     onClick={() => setStep(2)}
                   >
-                    Back to Terminal List
+                    Back to Terminals
                   </Button>
                 </div>
               </form>
@@ -263,13 +320,13 @@ export default function CompanyLoginPage() {
               <form onSubmit={handlePersonalLogin} className="space-y-6">
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <label className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
                       <UserIcon className="w-3 h-3" />
-                      Logged in as
+                      Terminal User
                     </label>
                     <Select value={selectedUserId} onValueChange={setSelectedUserId}>
-                      <SelectTrigger className="h-12 bg-white/50 border-slate-200 rounded-xl">
-                        <SelectValue placeholder="Select Personnel Identity" />
+                      <SelectTrigger className="h-12 bg-white/50 border-slate-200 rounded-xl font-bold">
+                        <SelectValue placeholder="Select Personnel" />
                       </SelectTrigger>
                       <SelectContent>
                         {users.map(u => (
@@ -280,14 +337,14 @@ export default function CompanyLoginPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
                       <Fingerprint className="w-3 h-3" />
-                      Personal Identity PIN
+                      Security PIN
                     </label>
                     <Input 
                       type="password"
-                      placeholder="Enter 4-digit PIN" 
-                      className="h-12 bg-white/50 border-slate-200 focus:ring-primary/20 rounded-xl tracking-[1em] text-center"
+                      placeholder="••••" 
+                      className="h-12 bg-white/50 border-slate-200 focus:ring-primary/20 rounded-xl tracking-[1.5em] text-center font-black"
                       value={personalPin}
                       onChange={(e) => setPersonalPin(e.target.value)}
                       maxLength={4}
@@ -299,15 +356,15 @@ export default function CompanyLoginPage() {
                 <div className="flex flex-col gap-3 pt-2">
                   <Button 
                     type="submit" 
-                    className="w-full h-12 bg-primary hover:bg-primary/90 font-bold shadow-lg shadow-primary/20 rounded-xl"
+                    className="w-full h-14 bg-primary font-black uppercase tracking-widest shadow-xl rounded-xl"
                     disabled={isVerifying || !selectedUserId}
                   >
-                    {isVerifying ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Authorize Identity"}
+                    {isVerifying ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Authorize Terminal"}
                   </Button>
                   <Button 
                     type="button"
                     variant="ghost"
-                    className="text-xs font-bold uppercase tracking-widest text-slate-400"
+                    className="text-[10px] font-black uppercase tracking-widest text-slate-400"
                     onClick={() => setStep(3)}
                   >
                     Back to Security Key
@@ -316,9 +373,12 @@ export default function CompanyLoginPage() {
               </form>
             )}
             
-            <p className="text-[10px] text-center text-slate-400 uppercase tracking-widest font-bold mt-6">
-              Encryption Layer Active
-            </p>
+            <div className="flex items-center justify-center gap-2 mt-8 opacity-40">
+              <ShieldCheck className="h-3 w-3 text-primary" />
+              <p className="text-[8px] text-center text-slate-400 uppercase tracking-[0.4em] font-black">
+                End-to-End Encryption Active
+              </p>
+            </div>
          </CardContent>
        </Card>
     </div>
