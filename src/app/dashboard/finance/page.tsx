@@ -1,11 +1,11 @@
 
 "use client"
 
-import { useState, useEffect } from "react"
+import { useMemo } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Wallet, TrendingUp, ArrowUpRight, ArrowDownRight, FileText, Download, Edit2, ShieldCheck, History, XCircle, Trash2 } from "lucide-react"
+import { Wallet, TrendingUp, ArrowUpRight, ArrowDownRight, FileText, Download, Edit2, ShieldCheck, History, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Bill } from "@/lib/types"
 import { useToast } from "@/hooks/use-toast"
@@ -17,32 +17,36 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
+import { collection, doc, setDoc, deleteDoc, query, orderBy } from "firebase/firestore"
+import { errorEmitter } from "@/firebase/error-emitter"
+import { FirestorePermissionError } from "@/firebase/errors"
 
 export default function FinancePage() {
   const { toast } = useToast()
-  const [bills, setBills] = useState<Bill[]>([])
-  const [legacyTransactions, setLegacyTransactions] = useState([]);
+  const db = useFirestore()
 
-  useEffect(() => {
-    const savedBills = localStorage.getItem('moonsync_bills');
-    if (savedBills) {
-      setBills(JSON.parse(savedBills));
-    }
-  }, []);
+  const billsQuery = useMemoFirebase(() => {
+    if (!db) return null;
+    return query(collection(db, 'bills'), orderBy('createdAt', 'desc'));
+  }, [db]);
 
-  const updateStatus = (id: string, newStatus: string) => {
-    // Only applies to legacy transactions if any
-    setLegacyTransactions(prev => prev.map((tx: any) => tx.id === id ? { ...tx, status: newStatus } : tx));
-    toast({
-      title: "Ledger Update Executed",
-      description: `Ref: ${id} status updated to ${newStatus.toUpperCase()}. Financial metrics adjusted in NRS.`,
-    });
-  };
+  const { data: bills = [] } = useCollection<Bill>(billsQuery);
 
   const updateSyncedBillStatus = (id: string, newStatus: any) => {
-    const updated = bills.map(b => b.id === id ? { ...b, status: newStatus } : b);
-    setBills(updated);
-    localStorage.setItem('moonsync_bills', JSON.stringify(updated));
+    if (!db) return;
+    const billRef = doc(db, 'bills', id);
+    const data = { status: newStatus };
+    
+    setDoc(billRef, data, { merge: true })
+      .catch(async () => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: billRef.path,
+          operation: 'update',
+          requestResourceData: data
+        }));
+      });
+    
     toast({
       title: "E-Bill Status Updated",
       description: `Ref: ${id} marked as ${newStatus} in shared NRS ledger.`,
@@ -50,9 +54,16 @@ export default function FinancePage() {
   }
 
   const deleteSyncedBill = (id: string) => {
-    const updated = bills.filter(b => b.id !== id);
-    setBills(updated);
-    localStorage.setItem('moonsync_bills', JSON.stringify(updated));
+    if (!db) return;
+    const billRef = doc(db, 'bills', id);
+    deleteDoc(billRef)
+      .catch(async () => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: billRef.path,
+          operation: 'delete'
+        }));
+      });
+
     toast({
       title: "E-Bill Purged",
       description: `Document ${id} permanently removed from NRS infrastructure.`,
@@ -60,24 +71,13 @@ export default function FinancePage() {
     });
   };
 
-  const deleteLegacyTransaction = (id: string) => {
-    setLegacyTransactions(prev => prev.filter((tx: any) => tx.id !== id));
-    toast({
-      title: "Record Deleted",
-      description: `Legacy transaction ${id} has been deleted.`,
-      variant: "destructive"
-    });
-  };
-
   const activeBills = bills.filter(b => b.status !== 'Void');
-  const activeLegacy = legacyTransactions.filter((tx: any) => tx.status !== 'Void');
 
-  const totalRevenue = activeBills.reduce((sum, bill) => sum + (bill.totalAmount || 0), 0) + 
-                       activeLegacy.reduce((sum, tx: any) => sum + tx.amount, 0);
+  const totalRevenue = activeBills.reduce((sum, bill) => sum + (bill.totalAmount || 0), 0);
 
-  const outstandingValue = activeLegacy
-    .filter((tx: any) => tx.status === 'Pending' || tx.status === 'Overdue')
-    .reduce((sum, tx: any) => sum + tx.amount, 0);
+  const outstandingValue = activeBills
+    .filter((b) => b.status === 'Pending' || b.status === 'Overdue')
+    .reduce((sum, b) => sum + (b.totalAmount || 0), 0);
 
   return (
     <div className="space-y-6">
@@ -104,7 +104,7 @@ export default function FinancePage() {
           <CardContent>
             <div className="text-3xl font-black text-slate-900 tracking-tighter">NRS {totalRevenue.toLocaleString()}.00</div>
             <div className="flex items-center text-xs text-emerald-500 font-black mt-2 uppercase tracking-widest">
-              <ArrowUpRight className="h-4 w-4 mr-1" /> +12.5% MTD
+              <ArrowUpRight className="h-4 w-4 mr-1" /> Verified Cloud Data
             </div>
           </CardContent>
         </Card>
@@ -132,7 +132,7 @@ export default function FinancePage() {
           <CardContent>
             <div className="text-3xl font-black text-slate-900 tracking-tighter">NRS {outstandingValue.toLocaleString()}.00</div>
             <div className="flex items-center text-xs text-orange-500 font-black mt-2 uppercase tracking-widest">
-              {activeLegacy.length + bills.filter(b => b.status === 'Pending').length} Pending Documents
+              {bills.filter(b => b.status === 'Pending' || b.status === 'Overdue').length} Pending Documents
             </div>
           </CardContent>
         </Card>
@@ -142,7 +142,7 @@ export default function FinancePage() {
         <CardHeader className="bg-slate-50 border-b flex flex-row items-center justify-between">
           <div>
             <CardTitle className="text-lg font-black uppercase tracking-widest">Transaction Synchronization Ledger</CardTitle>
-            <CardDescription className="text-xs font-medium">Monitoring encrypted E-Bills and legacy financial data in real-time.</CardDescription>
+            <CardDescription className="text-xs font-medium">Monitoring encrypted E-Bills and financial data synchronized across all devices.</CardDescription>
           </div>
           <div className="flex items-center gap-2">
              <History className="h-6 w-6 text-primary opacity-20" />
@@ -161,13 +161,14 @@ export default function FinancePage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {/* E-Bills Sync */}
               {bills.map((bill) => (
                 <TableRow key={bill.id} className={`hover:bg-emerald-50/30 transition-colors ${bill.status === 'Void' ? 'opacity-40 grayscale' : ''}`}>
                   <TableCell>
                     <div className="flex flex-col">
                       <span className="font-mono text-xs font-black text-primary">{bill.id}</span>
-                      <span className="text-[10px] font-bold text-muted-foreground">{new Date(bill.createdAt).toLocaleDateString()}</span>
+                      <span className="text-[10px] font-bold text-muted-foreground">
+                        {bill.createdAt ? new Date(bill.createdAt).toLocaleDateString() : 'N/A'}
+                      </span>
                     </div>
                   </TableCell>
                   <TableCell className="font-black text-sm text-slate-800">{bill.clientName}</TableCell>
@@ -190,7 +191,7 @@ export default function FinancePage() {
                             variant={bill.status === 'Void' ? 'destructive' : 'secondary'} 
                             className="text-[9px] font-black uppercase cursor-pointer hover:ring-2 hover:ring-primary/20 transition-all flex items-center gap-1.5"
                           >
-                            {bill.status}
+                            {bill.status || 'Paid'}
                             <Edit2 className="h-2 w-2 opacity-0 group-hover:opacity-100 transition-opacity" />
                           </Badge>
                         </Button>
@@ -199,6 +200,9 @@ export default function FinancePage() {
                         <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest">Update Bill Status</DropdownMenuLabel>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={() => updateSyncedBillStatus(bill.id, 'Paid')} className="text-xs font-bold">Mark as PAID</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => updateSyncedBillStatus(bill.id, 'Pending')} className="text-xs font-bold">Mark as PENDING</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => updateSyncedBillStatus(bill.id, 'Overdue')} className="text-xs font-bold text-orange-600">Mark as OVERDUE</DropdownMenuItem>
+                        <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={() => updateSyncedBillStatus(bill.id, 'Void')} className="text-xs font-bold text-destructive">VOID BILL</DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -216,68 +220,19 @@ export default function FinancePage() {
                 </TableRow>
               ))}
               
-              {/* Legacy Logs */}
-              {legacyTransactions.map((tx: any) => (
-                <TableRow key={tx.id} className={`hover:bg-slate-50 transition-colors ${tx.status === 'Void' ? 'opacity-40 grayscale' : ''}`}>
-                  <TableCell>
-                    <div className="flex flex-col">
-                      <span className="font-mono text-xs font-black text-primary">{tx.id}</span>
-                      <span className="text-[10px] font-bold text-muted-foreground">{tx.date}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="font-black text-sm text-slate-800">{tx.client}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className="text-[9px] font-black uppercase tracking-widest">{tx.service}</Badge>
-                  </TableCell>
-                  <TableCell className={`font-mono font-black text-sm ${tx.status === 'Void' ? 'line-through text-muted-foreground' : ''}`}>
-                    NRS {tx.amount.toLocaleString()}.00
-                  </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-fit p-0 group">
-                          <Badge 
-                            variant={
-                              tx.status === 'Paid' ? 'secondary' : 
-                              tx.status === 'Pending' ? 'default' : 
-                              tx.status === 'Void' ? 'destructive' : 'outline'
-                            } 
-                            className="text-[9px] font-black uppercase cursor-pointer hover:ring-2 hover:ring-primary/20 transition-all flex items-center gap-1.5"
-                          >
-                            {tx.status}
-                            <Edit2 className="h-2 w-2 opacity-0 group-hover:opacity-100 transition-opacity" />
-                          </Badge>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-48">
-                        <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest">Adjust Ledger Status</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => updateStatus(tx.id, 'Paid')} className="text-xs font-bold">Mark as PAID</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => updateStatus(tx.id, 'Pending')} className="text-xs font-bold">Mark as PENDING</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => updateStatus(tx.id, 'Overdue')} className="text-xs font-bold text-orange-600">Mark as OVERDUE</DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => updateStatus(tx.id, 'Void')} className="text-xs font-bold text-destructive">VOID TRANSACTION</DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                      onClick={() => deleteLegacyTransaction(tx.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+              {bills.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={6} className="py-20 text-center font-black uppercase tracking-[0.5em] text-slate-300">
+                    No Sync Data Found
                   </TableCell>
                 </TableRow>
-              ))}
+              )}
             </TableBody>
           </Table>
         </CardContent>
         <div className="bg-slate-50 border-t p-4 flex justify-center">
            <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.5em]">
-             Financial Intelligence Terminal • MoonSync Pro ERP Node
+             Financial Intelligence Terminal • MoonSync Pro Cloud Ledger
            </p>
         </div>
       </Card>
