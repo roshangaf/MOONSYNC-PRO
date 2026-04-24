@@ -55,7 +55,7 @@ export default function UsersPage() {
           description: `Identity records for ${editingUser.name} have been updated in the MoonSync cloud.`,
         });
       })
-      .catch(async (error) => {
+      .catch(async () => {
         setIsSaving(false);
         const permissionError = new FirestorePermissionError({
           path: userRef.path,
@@ -77,20 +77,13 @@ export default function UsersPage() {
           variant: "destructive"
         });
       })
-      .catch(async (error) => {
+      .catch(async () => {
         const permissionError = new FirestorePermissionError({
           path: userRef.path,
           operation: 'delete',
         });
         errorEmitter.emit('permission-error', permissionError);
       });
-  };
-
-  const handlePasswordReset = (user: User) => {
-    toast({
-      title: "Credential Reset Initiated",
-      description: `A secure link to reset PIN/Password has been dispatched to ${user.email}.`,
-    });
   };
 
   if (loading) return <div className="p-10 text-center animate-pulse font-black uppercase tracking-widest text-primary">Synchronizing Cloud Directory...</div>;
@@ -164,9 +157,6 @@ export default function UsersPage() {
                       <DropdownMenuContent align="end" className="w-56">
                         <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest">Security Terminal</DropdownMenuLabel>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => handlePasswordReset(user)} className="text-xs font-bold py-2">
-                          <Key className="mr-2 h-4 w-4 text-primary" /> Change PIN / Password
-                        </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => openEditDialog(user)} className="text-xs font-bold py-2">
                           <Edit2 className="mr-2 h-4 w-4 text-primary" /> Modify Profile
                         </DropdownMenuItem>

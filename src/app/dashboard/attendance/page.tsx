@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
@@ -18,8 +17,8 @@ import {
 import { useToast } from "@/hooks/use-toast"
 import { Progress } from "@/components/ui/progress"
 import { AttendanceRecord } from "@/lib/types"
-import { useFirestore, useCollection } from "@/firebase"
-import { collection, doc, setDoc, query, orderBy, where, serverTimestamp } from "firebase/firestore"
+import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
+import { collection, doc, setDoc, query, orderBy, where } from "firebase/firestore"
 import { errorEmitter } from "@/firebase/error-emitter"
 import { FirestorePermissionError } from "@/firebase/errors"
 
@@ -31,14 +30,13 @@ export default function AttendancePage() {
   const [currentTime, setCurrentTime] = useState<string>("");
   const [autoLocation, setAutoLocation] = useState<string>("Detecting...");
 
-  // Fetch records from Firestore
-  const attendanceQuery = useMemo(() => {
-    if (!db) return null;
+  const attendanceQuery = useMemoFirebase(() => {
+    if (!db || !user) return null;
     const colRef = collection(db, 'attendance');
-    if (user?.role === 'Admin' || user?.role === 'Finance') {
+    if (user.role === 'Admin' || user.role === 'Finance') {
       return query(colRef, orderBy('date', 'desc'));
     }
-    return query(colRef, where('userId', '==', user?.id || ''), orderBy('date', 'desc'));
+    return query(colRef, where('userId', '==', user.id), orderBy('date', 'desc'));
   }, [db, user]);
 
   const { data: records = [], loading } = useCollection<AttendanceRecord>(attendanceQuery);
@@ -92,7 +90,7 @@ export default function AttendancePage() {
         .then(() => {
           toast({ title: "Check-in Synchronized", description: `Landmark Captured at ${time}.` });
         })
-        .catch(async (err) => {
+        .catch(async () => {
           errorEmitter.emit('permission-error', new FirestorePermissionError({
             path: recordRef.path,
             operation: 'create',
@@ -108,7 +106,7 @@ export default function AttendancePage() {
         .then(() => {
           toast({ title: "Session Terminated", description: `Check-out logged at ${time}.` });
         })
-        .catch(async (err) => {
+        .catch(async () => {
           errorEmitter.emit('permission-error', new FirestorePermissionError({
             path: recordRef.path,
             operation: 'update',

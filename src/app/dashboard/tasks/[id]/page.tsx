@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useEffect } from "react"
@@ -7,39 +6,42 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { useAuth } from "@/components/auth-context"
-import { MOCK_USERS } from "@/lib/store"
 import { useToast } from "@/hooks/use-toast"
 import { Clock, Play, Square, UserPlus, CheckCircle, ArrowLeft, UserCheck, Phone, MapPin, User, Calendar, Settings2, Info, ListChecks, Trash2 } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { TaskStatus, Task } from "@/lib/types"
+import { TaskStatus, Task, User as UserType } from "@/lib/types"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { cn } from "@/lib/utils"
+import { useFirestore, useDoc, useCollection, useMemoFirebase } from "@/firebase"
+import { doc, setDoc, deleteDoc, collection } from "firebase/firestore"
+import { errorEmitter } from "@/firebase/error-emitter"
+import { FirestorePermissionError } from "@/firebase/errors"
 
 export default function TaskDetailPage() {
   const { id } = useParams()
   const router = useRouter()
   const { user } = useAuth()
   const { toast } = useToast()
+  const db = useFirestore()
   
-  const [task, setTask] = useState<Task | null>(null)
+  const taskRef = useMemoFirebase(() => db ? doc(db, 'tasks', id as string) : null, [db, id])
+  const { data: task, loading } = useDoc<Task>(taskRef)
+
+  const usersQuery = useMemoFirebase(() => db ? collection(db, 'users') : null, [db])
+  const { data: staffList = [] } = useCollection<UserType>(usersQuery)
+
   const [isLoggingTime, setIsLoggingTime] = useState(false)
   const [timer, setTimer] = useState(0)
   const [assigneeId, setAssigneeId] = useState("")
 
   useEffect(() => {
-    const savedTasksStr = localStorage.getItem('moonsync_tasks');
-    if (savedTasksStr) {
-      const savedTasks: Task[] = JSON.parse(savedTasksStr);
-      const foundTask = savedTasks.find(t => t.id === id);
-      if (foundTask) {
-        setTask(foundTask);
-        setAssigneeId(foundTask.assignedTo || "");
-      }
+    if (task) {
+      setAssigneeId(task.assignedTo || "")
     }
-  }, [id]);
+  }, [task])
 
-  const getStaffName = (id?: string) => {
-    return MOCK_USERS.find(u => u.id === id)?.name || "Unknown Personnel";
+  const getStaffName = (userId?: string) => {
+    return staffList.find(u => u.id === userId)?.name || "Unknown Personnel";
   };
 
   const getStatusColor = (status: string) => {
@@ -64,69 +66,79 @@ export default function TaskDetailPage() {
     return () => clearInterval(interval);
   }, [isLoggingTime]);
 
+  if (loading) return <div className="p-20 text-center animate-pulse font-black uppercase tracking-widest text-primary">Handshaking with Cloud Node...</div>;
   if (!task) return <div className="p-20 text-center font-bold">Task Terminal Error: Document Not Found</div>;
 
   const handleAssign = () => {
-    if (!assigneeId) return;
-    const updatedTask = { ...task, assignedTo: assigneeId, status: 'Assigned' as TaskStatus };
-    setTask(updatedTask);
-    updateTaskInStorage(updatedTask);
-    toast({
-      title: "Task Assigned",
-      description: `Task assigned to ${MOCK_USERS.find(u => u.id === assigneeId)?.name}`,
-    });
+    if (!db || !taskRef || !assigneeId) return;
+    const data = { assignedTo: assigneeId, status: 'Assigned' as TaskStatus };
+    setDoc(taskRef, data, { merge: true })
+      .then(() => {
+        toast({
+          title: "Task Assigned",
+          description: `Task assigned to ${getStaffName(assigneeId)}`,
+        });
+      })
+      .catch(async () => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: taskRef.path,
+          operation: 'update',
+          requestResourceData: data
+        }));
+      });
   };
 
   const handleStatusChange = (newStatus: TaskStatus) => {
-    const updatedTask = { ...task, status: newStatus };
-    setTask(updatedTask);
-    updateTaskInStorage(updatedTask);
-    toast({
-      title: "Status Updated",
-      description: `Task status changed to ${newStatus}`,
-    });
+    if (!db || !taskRef) return;
+    const data = { status: newStatus };
+    setDoc(taskRef, data, { merge: true })
+      .then(() => {
+        toast({
+          title: "Status Updated",
+          description: `Task status changed to ${newStatus}`,
+        });
+      })
+      .catch(async () => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: taskRef.path,
+          operation: 'update',
+          requestResourceData: data
+        }));
+      });
   };
 
   const handleDeleteTask = () => {
-    const savedTasksStr = localStorage.getItem('moonsync_tasks');
-    if (savedTasksStr) {
-      const savedTasks: Task[] = JSON.parse(savedTasksStr);
-      const updatedTasks = savedTasks.filter(t => t.id !== task.id);
-      localStorage.setItem('moonsync_tasks', JSON.stringify(updatedTasks));
-      toast({
-        title: "Task Deleted",
-        description: `Task ${task.id} permanently removed.`,
-        variant: "destructive",
+    if (!db || !taskRef) return;
+    deleteDoc(taskRef)
+      .then(() => {
+        toast({
+          title: "Task Deleted",
+          description: `Task ${task.id} permanently removed.`,
+          variant: "destructive",
+        });
+        router.push("/dashboard/tasks");
+      })
+      .catch(async () => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: taskRef.path,
+          operation: 'delete'
+        }));
       });
-      router.push("/dashboard/tasks");
-    }
-  };
-
-  const updateTaskInStorage = (updatedTask: Task) => {
-    const savedTasksStr = localStorage.getItem('moonsync_tasks');
-    if (savedTasksStr) {
-      const savedTasks: Task[] = JSON.parse(savedTasksStr);
-      const updatedTasks = savedTasks.map(t => t.id === updatedTask.id ? updatedTask : t);
-      localStorage.setItem('moonsync_tasks', JSON.stringify(updatedTasks));
-    }
   };
 
   const toggleTimeLogging = () => {
+    if (!db || !taskRef) return;
     if (isLoggingTime) {
       const completionTime = new Date().toISOString();
       toast({
         title: "Work Session Stopped",
-        description: `Logged ${Math.floor(timer / 60)} minutes of work. Job marked completed at ${new Date(completionTime).toLocaleTimeString()}.`,
+        description: `Logged ${Math.floor(timer / 60)} minutes of work. Job marked completed.`,
       });
       setIsLoggingTime(false);
-      const updatedTask = { ...task, status: 'Completed' as TaskStatus, completedAt: completionTime };
-      setTask(updatedTask);
-      updateTaskInStorage(updatedTask);
+      setDoc(taskRef, { status: 'Completed' as TaskStatus, completedAt: completionTime }, { merge: true });
     } else {
       setIsLoggingTime(true);
-      const updatedTask = { ...task, status: 'In Progress' as TaskStatus };
-      setTask(updatedTask);
-      updateTaskInStorage(updatedTask);
+      setDoc(taskRef, { status: 'In Progress' as TaskStatus }, { merge: true });
     }
   };
 
@@ -191,22 +203,25 @@ export default function TaskDetailPage() {
                   <div className="space-y-2">
                     <h4 className="font-black text-slate-900 uppercase tracking-tighter text-xs">Requirement Analysis</h4>
                     <p className="text-slate-600 leading-relaxed text-sm">{task.description || "No overview provided."}</p>
+                    {task.detailedDescription && (
+                      <div className="mt-4 p-4 bg-slate-50 rounded-xl border border-slate-100 italic text-slate-500 text-xs">
+                        {task.detailedDescription}
+                      </div>
+                    )}
                   </div>
                   
-                  <div className="space-y-2">
-                    <h4 className="font-black text-slate-900 uppercase tracking-tighter text-xs">Operational Blueprints</h4>
-                    <div className="p-5 bg-primary/5 rounded-2xl text-sm space-y-3 border border-primary/10">
-                      <p className="flex gap-2">
-                        <span className="font-black text-primary">01.</span> Analyze current infrastructure constraints and dependency map.
-                      </p>
-                      <p className="flex gap-2">
-                        <span className="font-black text-primary">02.</span> Prepare secure staging environment for validation protocols.
-                      </p>
-                      <p className="flex gap-2">
-                        <span className="font-black text-primary">03.</span> Execute primary task flow following IT security handbooks.
-                      </p>
+                  {task.steps && task.steps.length > 0 && (
+                    <div className="space-y-2">
+                      <h4 className="font-black text-slate-900 uppercase tracking-tighter text-xs">Operational Blueprints</h4>
+                      <div className="p-5 bg-primary/5 rounded-2xl text-sm space-y-3 border border-primary/10">
+                        {task.steps.map((step, idx) => (
+                          <p key={idx} className="flex gap-2">
+                            <span className="font-black text-primary">{(idx + 1).toString().padStart(2, '0')}.</span> {step}
+                          </p>
+                        ))}
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </TabsContent>
 
                 <TabsContent value="details" className="space-y-6">
@@ -298,7 +313,7 @@ export default function TaskDetailPage() {
                       <SelectValue placeholder="Select Technician" />
                     </SelectTrigger>
                     <SelectContent>
-                      {MOCK_USERS.filter(u => u.role === 'Technician').map(tech => (
+                      {staffList.filter(u => u.role === 'Technician').map(tech => (
                         <SelectItem key={tech.id} value={tech.id}>{tech.name}</SelectItem>
                       ))}
                     </SelectContent>
@@ -332,48 +347,8 @@ export default function TaskDetailPage() {
                   )}
                 </Button>
               </CardContent>
-              <CardFooter>
-                <Button 
-                  variant="outline" 
-                  className="w-full border-primary text-primary font-bold" 
-                  disabled={isLoggingTime || task.status === 'Completed'}
-                  onClick={() => handleStatusChange('Completed')}
-                >
-                  <><CheckCircle className="mr-2 h-4 w-4" /> Finalize Job</>
-                </Button>
-              </CardFooter>
             </Card>
           )}
-
-          <Card className="border-none shadow-md bg-white">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xs font-black uppercase tracking-widest text-muted-foreground">Task Metadata</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 text-sm pt-0">
-              <div className="flex justify-between items-center py-2 border-b border-slate-50">
-                <span className="text-muted-foreground font-bold text-[10px] uppercase">Job ID</span>
-                <span className="font-mono text-xs font-bold text-primary">{task.id}</span>
-              </div>
-              <div className="flex justify-between items-center py-2 border-b border-slate-50">
-                <span className="text-muted-foreground font-bold text-[10px] uppercase">Listing Timestamp</span>
-                <span className="font-mono text-[10px] font-bold">{new Date(task.createdAt).toLocaleTimeString()}</span>
-              </div>
-              {task.completedAt && (
-                <div className="flex justify-between items-center py-2 border-b border-slate-50 bg-emerald-50/50">
-                  <span className="text-emerald-700 font-bold text-[10px] uppercase">Finalized At</span>
-                  <span className="font-mono text-[10px] font-bold text-emerald-700">{new Date(task.completedAt).toLocaleTimeString()}</span>
-                </div>
-              )}
-              <div className="flex justify-between items-center py-2 border-b border-slate-50">
-                <span className="text-muted-foreground font-bold text-[10px] uppercase">Org Dept</span>
-                <span className="font-bold text-xs uppercase">{user?.department || 'IT SERVICES'}</span>
-              </div>
-              <div className="flex justify-between items-center py-2">
-                <span className="text-muted-foreground font-bold text-[10px] uppercase">Sync Status</span>
-                <span className="text-[10px] text-emerald-500 font-black animate-pulse uppercase tracking-widest">Live</span>
-              </div>
-            </CardContent>
-          </Card>
         </div>
       </div>
     </div>

@@ -1,13 +1,12 @@
 "use client"
 
-import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useAuth } from "@/components/auth-context"
 import { Briefcase, CheckCircle2, Clock, ListTodo, Users, TrendingUp, Inbox } from "lucide-react"
-import { MOCK_USERS } from "@/lib/store"
-import { Task } from "@/lib/types"
+import { Task, User } from "@/lib/types"
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
 import { collection, query, orderBy, limit } from "firebase/firestore"
+import { Badge } from "@/components/ui/badge"
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -18,21 +17,27 @@ export default function DashboardPage() {
     return query(collection(db, 'tasks'), orderBy('createdAt', 'desc'), limit(10));
   }, [db]);
   
-  const { data: tasks = [], loading } = useCollection<Task>(tasksQuery);
+  const usersQuery = useMemoFirebase(() => {
+    if (!db) return null;
+    return collection(db, 'users');
+  }, [db]);
+
+  const { data: tasks = [], loading: tasksLoading } = useCollection<Task>(tasksQuery);
+  const { data: users = [], loading: usersLoading } = useCollection<User>(usersQuery);
 
   const activeTasksCount = tasks.filter(t => t.status !== 'Completed').length;
-  const completedMtd = tasks.filter(t => t.status === 'Completed').length;
+  const completedCount = tasks.filter(t => t.status === 'Completed').length;
 
   const stats = [
     { title: "Active Tasks", value: activeTasksCount, icon: ListTodo, color: "text-blue-500" },
-    { title: "Completed (MTD)", value: completedMtd, icon: CheckCircle2, color: "text-green-500" },
+    { title: "Completed (ALL)", value: completedCount, icon: CheckCircle2, color: "text-green-500" },
     { title: "Resolution Potential", value: "98.2%", icon: Clock, color: "text-orange-500" },
-    { title: "Staff Nodes", value: MOCK_USERS.length, icon: Users, color: "text-purple-500" },
+    { title: "Staff Nodes", value: users.length, icon: Users, color: "text-purple-500" },
   ];
 
   const recentTasks = tasks.slice(0, 5);
 
-  if (loading) return <div className="p-20 text-center animate-pulse font-black uppercase tracking-widest text-primary">Synchronizing Cloud Dashboard...</div>;
+  if (tasksLoading || usersLoading) return <div className="p-20 text-center animate-pulse font-black uppercase tracking-widest text-primary">Synchronizing Cloud Dashboard...</div>;
 
   return (
     <div className="space-y-6">
