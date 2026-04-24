@@ -31,15 +31,13 @@ export default function AttendancePage() {
   const [currentTime, setCurrentTime] = useState<string>("");
   const [autoLocation, setAutoLocation] = useState<string>("Detecting...");
 
-  // Optimized query aligned with layout pre-fetch
   const attendanceQuery = useMemoFirebase(() => {
     if (!db) return null;
     return query(collection(db, 'attendance'), orderBy('date', 'desc'));
   }, [db]);
 
-  const { data: allRecords = [], loading } = useCollection<AttendanceRecord>(attendanceQuery);
+  const { data: allRecords = [] } = useCollection<AttendanceRecord>(attendanceQuery);
 
-  // Client-side filtering to maintain instant responsiveness across pages
   const records = useMemo(() => {
     if (user?.role === 'Admin' || user?.role === 'Finance') return allRecords;
     return allRecords.filter(r => r.userId === user?.id);
@@ -104,8 +102,6 @@ export default function AttendancePage() {
 
   const presentCount = records.filter(r => r.status === 'Present').length;
   const attendancePercentage = records.length > 0 ? (presentCount / records.length) * 100 : 0;
-
-  if (loading && records.length === 0) return <div className="p-20 text-center animate-pulse font-black uppercase tracking-widest text-primary">Synchronizing Cloud Logs...</div>;
 
   return (
     <div className="space-y-6">
@@ -216,7 +212,7 @@ export default function AttendancePage() {
                 </TableBody>
               </Table>
             </div>
-            {records.length === 0 && !loading && (
+            {records.length === 0 && (
               <div className="p-10 text-center flex flex-col items-center gap-2 opacity-30">
                 <WifiOff className="h-6 w-6" />
                 <p className="text-[9px] font-black uppercase tracking-widest">Cloud ledger empty.</p>

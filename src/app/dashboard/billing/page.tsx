@@ -43,7 +43,7 @@ export default function BillingPage() {
   const [isGenerating, setIsGenerating] = useState(false)
 
   const billsQuery = useMemo(() => db ? query(collection(db, 'bills'), orderBy('createdAt', 'desc')) : null, [db]);
-  const { data: bills = [], loading } = useCollection<Bill>(billsQuery);
+  const { data: bills = [] } = useCollection<Bill>(billsQuery);
 
   const addItem = () => {
     if (!particulars || !amount) return;
@@ -126,8 +126,6 @@ export default function BillingPage() {
         }));
       });
   }
-
-  if (loading) return <div className="p-20 text-center animate-pulse font-black uppercase tracking-widest text-primary">Synchronizing Cloud Financials...</div>;
 
   return (
     <div className="space-y-6">

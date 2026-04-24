@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -61,7 +62,7 @@ export default function CompanyPage() {
   useEffect(() => {
     if (companyProfile) {
       setTempData({ ...companyProfile });
-    } else if (!loading) {
+    } else if (!loading && !tempData) {
       setTempData({
         name: "MoonSync Pro Terminal Systems",
         domain: "moonsyncpro.io",
@@ -72,7 +73,7 @@ export default function CompanyPage() {
         deptKeys: DEFAULT_DEPT_KEYS
       });
     }
-  }, [companyProfile, loading]);
+  }, [companyProfile, loading, tempData]);
 
   const handleEdit = () => setIsEditing(true);
   const handleCancel = () => {
@@ -159,7 +160,7 @@ export default function CompanyPage() {
       });
   };
 
-  if (loading || !tempData) return <div className="p-10 text-center animate-pulse font-black uppercase tracking-widest text-primary">Handshaking with Cloud Node...</div>;
+  if (!tempData && loading) return null;
 
   return (
     <div className="space-y-6 animate-fade-in pb-20">
@@ -203,33 +204,33 @@ export default function CompanyPage() {
             <div className="space-y-2">
               <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Entity Name</Label>
               {isEditing ? (
-                <Input value={tempData.name} onChange={(e) => setTempData({...tempData, name: e.target.value})} className="h-12 bg-slate-50 rounded-xl" />
+                <Input value={tempData?.name || ''} onChange={(e) => setTempData({...tempData, name: e.target.value})} className="h-12 bg-slate-50 rounded-xl" />
               ) : (
                 <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-xl border border-slate-100">
                   <Building2 className="h-5 w-5 text-primary" />
-                  <p className="text-md font-bold text-slate-900">{tempData.name}</p>
+                  <p className="text-md font-bold text-slate-900">{tempData?.name}</p>
                 </div>
               )}
             </div>
             <div className="space-y-2">
               <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Corporate Domain</Label>
               {isEditing ? (
-                <Input value={tempData.domain} onChange={(e) => setTempData({...tempData, domain: e.target.value})} className="h-12 bg-slate-50 rounded-xl" />
+                <Input value={tempData?.domain || ''} onChange={(e) => setTempData({...tempData, domain: e.target.value})} className="h-12 bg-slate-50 rounded-xl" />
               ) : (
                 <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-xl border border-slate-100">
                   <Globe className="h-5 w-5 text-primary" />
-                  <p className="text-md font-bold text-slate-900">{tempData.domain}</p>
+                  <p className="text-md font-bold text-slate-900">{tempData?.domain}</p>
                 </div>
               )}
             </div>
             <div className="space-y-2">
               <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Tax Identity (VAT)</Label>
               {isEditing ? (
-                <Input value={tempData.vat} onChange={(e) => setTempData({...tempData, vat: e.target.value})} className="h-12 bg-slate-50 rounded-xl" />
+                <Input value={tempData?.vat || ''} onChange={(e) => setTempData({...tempData, vat: e.target.value})} className="h-12 bg-slate-50 rounded-xl" />
               ) : (
                 <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-xl border border-slate-100">
                   <ShieldCheck className="h-5 w-5 text-primary" />
-                  <p className="text-md font-bold text-slate-900">{tempData.vat}</p>
+                  <p className="text-md font-bold text-slate-900">{tempData?.vat}</p>
                 </div>
               )}
             </div>
@@ -242,14 +243,14 @@ export default function CompanyPage() {
             <CardTitle className="text-lg font-black uppercase tracking-widest">Departmental Security Keys</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {(Object.keys(tempData.deptKeys || DEFAULT_DEPT_KEYS) as Role[]).map((role) => (
+            {(Object.keys(tempData?.deptKeys || DEFAULT_DEPT_KEYS) as Role[]).map((role) => (
               <div key={role} className="space-y-1.5">
                 <Label className="text-[9px] font-black uppercase text-muted-foreground tracking-[0.2em]">{role} Access Key</Label>
                 {isEditing ? (
                   <div className="relative">
                     <Key className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input 
-                      value={tempData.deptKeys?.[role] || ""} 
+                      value={tempData?.deptKeys?.[role] || ""} 
                       onChange={(e) => setTempData({...tempData, deptKeys: {...tempData.deptKeys, [role]: e.target.value}})}
                       className="bg-slate-50 border-slate-200 font-mono text-xs pl-10 h-10 rounded-xl"
                     />

@@ -1,3 +1,4 @@
+
 "use client"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -22,8 +23,8 @@ export default function DashboardPage() {
     return collection(db, 'users');
   }, [db]);
 
-  const { data: tasks = [], loading: tasksLoading } = useCollection<Task>(tasksQuery);
-  const { data: users = [], loading: usersLoading } = useCollection<User>(usersQuery);
+  const { data: tasks = [] } = useCollection<Task>(tasksQuery);
+  const { data: users = [] } = useCollection<User>(usersQuery);
 
   const activeTasksCount = tasks.filter(t => t.status !== 'Completed').length;
   const completedCount = tasks.filter(t => t.status === 'Completed').length;
@@ -36,8 +37,6 @@ export default function DashboardPage() {
   ];
 
   const recentTasks = tasks.slice(0, 5);
-
-  if (tasksLoading || usersLoading) return <div className="p-20 text-center animate-pulse font-black uppercase tracking-widest text-primary">Synchronizing Cloud Dashboard...</div>;
 
   return (
     <div className="space-y-6">

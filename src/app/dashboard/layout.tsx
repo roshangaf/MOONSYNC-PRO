@@ -15,13 +15,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const { user, isLoading } = useAuth();
   const db = useFirestore();
 
-  // HIGH-SPEED CACHE WARMING: Establish background listeners for instant sub-page loading
   const tasksQuery = useMemoFirebase(() => db ? query(collection(db, 'tasks'), orderBy('createdAt', 'desc')) : null, [db]);
   const usersQuery = useMemoFirebase(() => db ? collection(db, 'users') : null, [db]);
   const attendanceQuery = useMemoFirebase(() => db ? query(collection(db, 'attendance'), orderBy('date', 'desc')) : null, [db]);
   const billsQuery = useMemoFirebase(() => db ? query(collection(db, 'bills'), orderBy('createdAt', 'desc')) : null, [db]);
   
-  // Prime the persistent cache for all core terminals
   useCollection(tasksQuery);
   useCollection(usersQuery);
   useCollection(attendanceQuery);
@@ -33,7 +31,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
   }, [user, isLoading]);
 
-  if (isLoading || !user) return <div className="h-screen w-screen flex items-center justify-center font-black uppercase tracking-widest text-primary">Establishing Cloud Handshake...</div>;
+  if (isLoading) return null;
+  if (!user) return null;
 
   return (
     <SidebarProvider>

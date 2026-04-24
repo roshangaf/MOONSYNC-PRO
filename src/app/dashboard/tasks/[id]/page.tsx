@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect } from "react"
@@ -66,8 +67,8 @@ export default function TaskDetailPage() {
     return () => clearInterval(interval);
   }, [isLoggingTime]);
 
-  if (loading) return <div className="p-20 text-center animate-pulse font-black uppercase tracking-widest text-primary">Handshaking with Cloud Node...</div>;
-  if (!task) return <div className="p-20 text-center font-bold">Task Terminal Error: Document Not Found</div>;
+  if (!task && loading) return null;
+  if (!task && !loading) return <div className="p-20 text-center font-bold">Task Terminal Error: Document Not Found</div>;
 
   const handleAssign = () => {
     if (!db || !taskRef || !assigneeId) return;
@@ -149,7 +150,7 @@ export default function TaskDetailPage() {
     return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const canManageStatus = user?.role === 'Admin' || (user?.role === 'Technician' && task.assignedTo === user.id);
+  const canManageStatus = user?.role === 'Admin' || (user?.role === 'Technician' && task?.assignedTo === user?.id);
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -171,18 +172,18 @@ export default function TaskDetailPage() {
           <Card className="shadow-lg border-none overflow-hidden bg-white">
             <CardHeader className="border-b bg-muted/20">
               <div className="flex items-center justify-between mb-4">
-                <Badge variant={getStatusColor(task.status)} className="font-bold uppercase tracking-widest">{task.status}</Badge>
-                <Badge variant="outline" className="font-bold border-primary text-primary">{task.priority} Priority</Badge>
+                <Badge variant={getStatusColor(task?.status || '')} className="font-bold uppercase tracking-widest">{task?.status}</Badge>
+                <Badge variant="outline" className="font-bold border-primary text-primary">{task?.priority} Priority</Badge>
               </div>
-              <CardTitle className="text-3xl font-black tracking-tight text-slate-900 uppercase">{task.title}</CardTitle>
+              <CardTitle className="text-3xl font-black tracking-tight text-slate-900 uppercase">{task?.title}</CardTitle>
               <div className="flex flex-col sm:flex-row sm:items-center gap-4 mt-4">
                 <div className="flex items-center gap-2 text-sm font-medium text-slate-500">
                   <UserCheck className="h-4 w-4 text-primary" />
-                  <span>Listed by <span className="text-primary font-bold">{getStaffName(task.createdBy)}</span></span>
+                  <span>Listed by <span className="text-primary font-bold">{getStaffName(task?.createdBy)}</span></span>
                 </div>
                 <div className="flex items-center gap-2 text-sm font-medium text-slate-500">
                   <Calendar className="h-4 w-4 text-primary" />
-                  <span>On <span className="text-slate-900 font-bold">{new Date(task.createdAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</span></span>
+                  <span>On <span className="text-slate-900 font-bold">{task?.createdAt ? new Date(task.createdAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : ''}</span></span>
                 </div>
               </div>
             </CardHeader>
@@ -202,15 +203,15 @@ export default function TaskDetailPage() {
                 <TabsContent value="overview" className="space-y-6">
                   <div className="space-y-2">
                     <h4 className="font-black text-slate-900 uppercase tracking-tighter text-xs">Requirement Analysis</h4>
-                    <p className="text-slate-600 leading-relaxed text-sm">{task.description || "No overview provided."}</p>
-                    {task.detailedDescription && (
+                    <p className="text-slate-600 leading-relaxed text-sm">{task?.description || "No overview provided."}</p>
+                    {task?.detailedDescription && (
                       <div className="mt-4 p-4 bg-slate-50 rounded-xl border border-slate-100 italic text-slate-500 text-xs">
                         {task.detailedDescription}
                       </div>
                     )}
                   </div>
                   
-                  {task.steps && task.steps.length > 0 && (
+                  {task?.steps && task.steps.length > 0 && (
                     <div className="space-y-2">
                       <h4 className="font-black text-slate-900 uppercase tracking-tighter text-xs">Operational Blueprints</h4>
                       <div className="p-5 bg-primary/5 rounded-2xl text-sm space-y-3 border border-primary/10">
@@ -232,15 +233,15 @@ export default function TaskDetailPage() {
                       </div>
                       <div>
                         <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Customer Identity</p>
-                        <p className="text-md font-bold text-slate-900">{task.contactName || "Direct Transaction / Cash"}</p>
+                        <p className="text-md font-bold text-slate-900">{task?.contactName || "Direct Transaction / Cash"}</p>
                       </div>
                     </div>
 
                     <a 
-                      href={task.contactNumber ? `tel:${task.contactNumber}` : undefined}
+                      href={task?.contactNumber ? `tel:${task.contactNumber}` : undefined}
                       className={cn(
                         "flex items-center gap-4 p-4 bg-slate-50 rounded-xl border border-slate-100 transition-colors",
-                        task.contactNumber && "hover:bg-primary/5 active:scale-[0.98] cursor-pointer"
+                        task?.contactNumber && "hover:bg-primary/5 active:scale-[0.98] cursor-pointer"
                       )}
                     >
                       <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
@@ -248,7 +249,7 @@ export default function TaskDetailPage() {
                       </div>
                       <div>
                         <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Verification Contact</p>
-                        <p className="text-md font-bold text-slate-900">{task.contactNumber || "Not Provided"}</p>
+                        <p className="text-md font-bold text-slate-900">{task?.contactNumber || "Not Provided"}</p>
                       </div>
                     </a>
 
@@ -258,7 +259,7 @@ export default function TaskDetailPage() {
                       </div>
                       <div>
                         <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Deployment / Service Address</p>
-                        <p className="text-md font-bold text-slate-900">{task.address || "Over-the-counter Service"}</p>
+                        <p className="text-md font-bold text-slate-900">{task?.address || "Over-the-counter Service"}</p>
                       </div>
                     </div>
                   </div>
@@ -280,7 +281,7 @@ export default function TaskDetailPage() {
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Modify Status</label>
-                    <Select value={task.status} onValueChange={(v) => handleStatusChange(v as TaskStatus)}>
+                    <Select value={task?.status || ''} onValueChange={(v) => handleStatusChange(v as TaskStatus)}>
                       <SelectTrigger className="bg-white">
                         <SelectValue placeholder="Update Status" />
                       </SelectTrigger>
@@ -297,7 +298,7 @@ export default function TaskDetailPage() {
              </Card>
           )}
 
-          {user?.role === 'Admin' && task.status !== 'Completed' && (
+          {user?.role === 'Admin' && task?.status !== 'Completed' && (
             <Card className="border-accent bg-accent/5">
               <CardHeader>
                 <CardTitle className="text-sm font-bold flex items-center gap-2 uppercase tracking-tighter">
@@ -324,7 +325,7 @@ export default function TaskDetailPage() {
             </Card>
           )}
 
-          {user?.role === 'Technician' && task.assignedTo === user.id && task.status !== 'Completed' && (
+          {user?.role === 'Technician' && task?.assignedTo === user?.id && task?.status !== 'Completed' && (
             <Card className="border-primary bg-primary/5 shadow-xl shadow-primary/10">
               <CardHeader>
                 <CardTitle className="text-sm font-bold flex items-center gap-2 uppercase tracking-tighter text-primary">

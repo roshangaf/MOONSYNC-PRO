@@ -22,7 +22,7 @@ import { FirestorePermissionError } from '@/firebase/errors';
 export default function UsersPage() {
   const db = useFirestore();
   const usersRef = useMemoFirebase(() => db ? collection(db, 'users') : null, [db]);
-  const { data: users = [], loading } = useCollection<User>(usersRef);
+  const { data: users = [] } = useCollection<User>(usersRef);
   
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -86,8 +86,6 @@ export default function UsersPage() {
         errorEmitter.emit('permission-error', permissionError);
       });
   };
-
-  if (loading && users.length === 0) return <div className="p-10 text-center animate-pulse font-black uppercase tracking-widest text-primary">Synchronizing Cloud Directory...</div>;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -170,7 +168,7 @@ export default function UsersPage() {
                   </TableCell>
                 </TableRow>
               ))}
-              {users.length === 0 && !loading && (
+              {users.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={5} className="py-20 text-center font-black uppercase tracking-[0.5em] text-slate-300">
                     Directory Offline

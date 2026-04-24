@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useAuth } from '@/components/auth-context';
 import { Briefcase, Filter, Plus, Search, Download, Calendar, Trash2 } from 'lucide-react';
-import Link from 'next/link';
+import Link from 'link/next';
 import { useToast } from '@/hooks/use-toast';
 import {
   DropdownMenu,
@@ -32,9 +32,8 @@ export default function TasksPage() {
   const { toast } = useToast();
   const db = useFirestore();
   
-  // Memoized query matching the pre-fetch in DashboardLayout for instant loading
   const tasksRef = useMemoFirebase(() => db ? query(collection(db, 'tasks'), orderBy('createdAt', 'desc')) : null, [db]);
-  const { data: tasks = [], loading } = useCollection<Task>(tasksRef);
+  const { data: tasks = [] } = useCollection<Task>(tasksRef);
   
   const [searchTerm, setSearchTerm] = useState("");
   const [filterPriority, setFilterPriority] = useState<string[]>([]);
@@ -116,9 +115,6 @@ export default function TasksPage() {
       return dateString;
     }
   };
-
-  // Only show loading if we are fetching AND have zero data. Persistent cache usually ensures tasks.length > 0 instantly.
-  if (loading && tasks.length === 0) return <div className="p-20 text-center animate-pulse font-black uppercase tracking-widest text-primary">Synchronizing Cloud Ledger...</div>;
 
   return (
     <div className="space-y-6">
