@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -86,7 +87,7 @@ export default function UsersPage() {
       });
   };
 
-  if (loading) return <div className="p-10 text-center animate-pulse font-black uppercase tracking-widest text-primary">Synchronizing Cloud Directory...</div>;
+  if (loading && users.length === 0) return <div className="p-10 text-center animate-pulse font-black uppercase tracking-widest text-primary">Synchronizing Cloud Directory...</div>;
 
   return (
     <div className="space-y-6 animate-fade-in">

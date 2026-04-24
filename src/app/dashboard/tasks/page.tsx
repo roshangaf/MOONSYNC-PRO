@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -22,7 +23,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Task } from '@/lib/types';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, doc, deleteDoc } from 'firebase/firestore';
+import { collection, doc, deleteDoc, query, orderBy } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 
@@ -31,7 +32,8 @@ export default function TasksPage() {
   const { toast } = useToast();
   const db = useFirestore();
   
-  const tasksRef = useMemoFirebase(() => db ? collection(db, 'tasks') : null, [db]);
+  // Memoized query matching the pre-fetch in DashboardLayout for instant loading
+  const tasksRef = useMemoFirebase(() => db ? query(collection(db, 'tasks'), orderBy('createdAt', 'desc')) : null, [db]);
   const { data: tasks = [], loading } = useCollection<Task>(tasksRef);
   
   const [searchTerm, setSearchTerm] = useState("");
@@ -115,7 +117,8 @@ export default function TasksPage() {
     }
   };
 
-  if (loading) return <div className="p-20 text-center animate-pulse font-black uppercase tracking-widest text-primary">Synchronizing Cloud Ledger...</div>;
+  // Only show loading if we are fetching AND have zero data. Persistent cache usually ensures tasks.length > 0 instantly.
+  if (loading && tasks.length === 0) return <div className="p-20 text-center animate-pulse font-black uppercase tracking-widest text-primary">Synchronizing Cloud Ledger...</div>;
 
   return (
     <div className="space-y-6">

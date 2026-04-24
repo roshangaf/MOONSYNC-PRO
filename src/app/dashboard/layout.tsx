@@ -9,20 +9,21 @@ import { useEffect } from "react"
 import { Separator } from "@/components/ui/separator"
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb"
 import { useFirestore, useMemoFirebase, useCollection } from "@/firebase"
-import { collection, query, limit } from "firebase/firestore"
+import { collection, query, limit, orderBy } from "firebase/firestore"
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
   const db = useFirestore();
 
-  // Cache Warming: Pre-fetch core collections to prime the persistent local cache
-  const tasksRef = useMemoFirebase(() => db ? query(collection(db, 'tasks'), limit(50)) : null, [db]);
-  const usersRef = useMemoFirebase(() => db ? collection(db, 'users') : null, [db]);
-  const attendanceRef = useMemoFirebase(() => db ? query(collection(db, 'attendance'), limit(20)) : null, [db]);
+  // Cache Warming: Pre-fetch core collections with exact queries used in pages to prime the persistent local cache
+  const tasksQuery = useMemoFirebase(() => db ? query(collection(db, 'tasks'), orderBy('createdAt', 'desc')) : null, [db]);
+  const usersQuery = useMemoFirebase(() => db ? collection(db, 'users') : null, [db]);
+  const attendanceQuery = useMemoFirebase(() => db ? query(collection(db, 'attendance'), orderBy('date', 'desc')) : null, [db]);
   
-  useCollection(tasksRef);
-  useCollection(usersRef);
-  useCollection(attendanceRef);
+  // These hooks establish real-time listeners that stay active while the user is in the dashboard
+  useCollection(tasksQuery);
+  useCollection(usersQuery);
+  useCollection(attendanceQuery);
 
   useEffect(() => {
     if (!isLoading && !user) {
