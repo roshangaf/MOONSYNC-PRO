@@ -18,7 +18,7 @@ import { Loader2, Sparkles, Wand2, MapPin, User, Phone } from 'lucide-react';
 import { useAuth } from '@/components/auth-context';
 import { Task, TaskStatus } from '@/lib/types';
 import { useFirestore } from '@/firebase';
-import { collection, doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 
@@ -94,29 +94,24 @@ export default function NewTaskPage() {
       id: taskId,
       title: values.title,
       description: values.description || "",
-      contactName: values.contactName,
-      contactNumber: values.contactNumber,
-      address: values.address,
+      contactName: values.contactName || "",
+      contactNumber: values.contactNumber || "",
+      address: values.address || "",
       status: 'Pending' as TaskStatus,
       priority: values.priority,
       createdBy: user?.id || 'unknown',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       timeLogs: [],
-      detailedDescription: refinedData?.refinedDescription,
-      subTasks: refinedData?.subTasks,
-      steps: refinedData?.steps,
+      detailedDescription: refinedData?.refinedDescription || "",
+      subTasks: refinedData?.subTasks || [],
+      steps: refinedData?.steps || [],
     };
 
     const taskRef = doc(db, 'tasks', taskId);
+    
+    // Background sync: No await to eliminate lag
     setDoc(taskRef, newTask)
-      .then(() => {
-        toast({
-          title: "Task Initialized",
-          description: `Job listed and synchronized with MoonSync Cloud.`,
-        });
-        router.push("/dashboard/tasks");
-      })
       .catch(async (error) => {
         const permissionError = new FirestorePermissionError({
           path: taskRef.path,
@@ -125,6 +120,12 @@ export default function NewTaskPage() {
         });
         errorEmitter.emit('permission-error', permissionError);
       });
+
+    toast({
+      title: "Task Initialized",
+      description: `Job listed and synchronized with MoonSync Cloud.`,
+    });
+    router.push("/dashboard/tasks");
   }
 
   return (

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { UserPlus, MoreHorizontal, Shield, Edit2, UserX, UserCheck, Loader2, Key } from 'lucide-react';
+import { UserPlus, MoreHorizontal, Shield, Edit2, UserX, UserCheck, Loader2, Key, Fingerprint } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -15,7 +15,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { User, Role, Department } from '@/lib/types';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, doc, setDoc, deleteDoc } from 'firebase/firestore';
+import { doc, setDoc, deleteDoc, collection } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 
@@ -26,7 +26,6 @@ export default function UsersPage() {
   
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
 
   const handleAdminAction = (action: string, userName: string) => {
@@ -44,27 +43,25 @@ export default function UsersPage() {
   const handleSaveUser = () => {
     if (!editingUser || !db) return;
 
-    setIsSaving(true);
     const userRef = doc(db, 'users', editingUser.id);
+    const updatedUser = { ...editingUser };
     
-    setDoc(userRef, editingUser, { merge: true })
-      .then(() => {
-        setIsEditDialogOpen(false);
-        setIsSaving(false);
-        toast({
-          title: "Profile Synchronized",
-          description: `Identity records for ${editingUser.name} have been updated in the MoonSync cloud.`,
-        });
-      })
-      .catch(async () => {
-        setIsSaving(false);
+    // Optimistic Update: Close and toast immediately to remove lag
+    setDoc(userRef, updatedUser, { merge: true })
+      .catch(async (error) => {
         const permissionError = new FirestorePermissionError({
           path: userRef.path,
           operation: 'update',
-          requestResourceData: editingUser,
+          requestResourceData: updatedUser,
         });
         errorEmitter.emit('permission-error', permissionError);
       });
+
+    setIsEditDialogOpen(false);
+    toast({
+      title: "Profile Synchronized",
+      description: `Identity records for ${updatedUser.name} have been updated in the MoonSync cloud.`,
+    });
   };
 
   const handleDeleteUser = (userId: string, userName: string) => {
@@ -194,7 +191,7 @@ export default function UsersPage() {
               Edit Personnel Profile
             </DialogTitle>
             <DialogDescription className="text-xs">
-              Synchronize departmental roles and identity metadata.
+              Synchronize departmental roles and security identity metadata.
             </DialogDescription>
           </DialogHeader>
           {editingUser && (
@@ -237,15 +234,28 @@ export default function UsersPage() {
                   </SelectContent>
                 </Select>
               </div>
+              <div className="grid gap-2">
+                <Label htmlFor="pin" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                  <Fingerprint className="h-3 w-3" /> Security PIN (4 Digits)
+                </Label>
+                <Input
+                  id="pin"
+                  type="password"
+                  maxLength={4}
+                  value={editingUser.pin || ""}
+                  onChange={(e) => setEditingUser({ ...editingUser, pin: e.target.value })}
+                  className="h-11 bg-slate-50 border-slate-200 focus:ring-primary/20 rounded-xl font-mono text-center tracking-[1em]"
+                  placeholder="••••"
+                />
+              </div>
             </div>
           )}
           <DialogFooter className="gap-2 sm:gap-0">
             <Button variant="outline" onClick={() => setIsEditDialogOpen(false)} className="uppercase font-bold text-[10px] tracking-widest rounded-xl h-11 px-6">
               Cancel
             </Button>
-            <Button onClick={handleSaveUser} disabled={isSaving} className="uppercase font-bold text-[10px] tracking-widest bg-primary rounded-xl h-11 px-6 shadow-lg shadow-primary/20 transition-all active:scale-95">
-              {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-              {isSaving ? "Syncing..." : "Apply Changes"}
+            <Button onClick={handleSaveUser} className="uppercase font-bold text-[10px] tracking-widest bg-primary rounded-xl h-11 px-6 shadow-lg shadow-primary/20 transition-all active:scale-95">
+              Apply Changes
             </Button>
           </DialogFooter>
         </DialogContent>
