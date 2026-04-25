@@ -12,6 +12,10 @@ import {
 import { errorEmitter } from '../error-emitter';
 import { FirestorePermissionError } from '../errors';
 
+/**
+ * High-performance hook for real-time documents.
+ * Prioritizes local cache to provide an "instant" UI experience.
+ */
 export function useDoc<T = DocumentData>(ref: DocumentReference<T> | null) {
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(false);
@@ -25,6 +29,7 @@ export function useDoc<T = DocumentData>(ref: DocumentReference<T> | null) {
       return;
     }
 
+    // Only set loading if the path changed and we don't have existing data for it.
     if (lastPathRef.current !== ref.path && !data) {
       setLoading(true);
     }

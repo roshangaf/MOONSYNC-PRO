@@ -12,6 +12,10 @@ import {
 import { errorEmitter } from '../error-emitter';
 import { FirestorePermissionError } from '../errors';
 
+/**
+ * High-performance hook for real-time collections.
+ * Prioritizes local cache to provide an "instant" UI experience.
+ */
 export function useCollection<T = DocumentData>(query: Query<T> | null) {
   const [data, setData] = useState<T[]>([]);
   const [loading, setLoading] = useState(false);
@@ -27,8 +31,8 @@ export function useCollection<T = DocumentData>(query: Query<T> | null) {
 
     const currentQueryKey = (query as any)._query?.path?.segments?.join('/') || 'query';
     
-    // Only set loading if we have absolutely no data for this query
-    // and it's a new query path
+    // We only show loading if we have NO data for this specific query yet.
+    // If we have data (even from cache), we keep showing it during background sync.
     if (lastQueryRef.current !== currentQueryKey && data.length === 0) {
       setLoading(true);
     }
@@ -46,7 +50,7 @@ export function useCollection<T = DocumentData>(query: Query<T> | null) {
         // Optimistic update: use cache immediately
         setData(items);
         
-        // Only stop loading when we have the first snapshot (from cache or server)
+        // Stop loading as soon as we have any snapshot (cache or server)
         setLoading(false);
       },
       async (serverError: FirestoreError) => {

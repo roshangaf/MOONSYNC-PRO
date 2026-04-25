@@ -23,7 +23,7 @@ import {
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { Bill, BillItem, BillType } from "@/lib/types"
-import { useFirestore, useCollection } from "@/firebase"
+import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
 import { collection, doc, setDoc, query, orderBy, deleteDoc } from "firebase/firestore"
 import { errorEmitter } from "@/firebase/error-emitter"
 import { FirestorePermissionError } from "@/firebase/errors"
@@ -40,9 +40,8 @@ export default function BillingPage() {
   const [quantity, setQuantity] = useState("1")
   const [draftItems, setDraftItems] = useState<BillItem[]>([])
   const [selectedBill, setSelectedBill] = useState<Bill | null>(null)
-  const [isGenerating, setIsGenerating] = useState(false)
 
-  const billsQuery = useMemo(() => db ? query(collection(db, 'bills'), orderBy('createdAt', 'desc')) : null, [db]);
+  const billsQuery = useMemoFirebase(() => db ? query(collection(db, 'bills'), orderBy('createdAt', 'desc')) : null, [db]);
   const { data: bills = [] } = useCollection<Bill>(billsQuery);
 
   const addItem = () => {
@@ -67,7 +66,6 @@ export default function BillingPage() {
 
   const generateBill = () => {
     if (!db || draftItems.length === 0) return;
-    setIsGenerating(true);
     
     const billId = `INV-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
     const newBill: Bill = {
@@ -83,28 +81,27 @@ export default function BillingPage() {
     };
 
     const billRef = doc(db, 'bills', billId);
+    
+    // Turbo-Sync: Optimistic action
     setDoc(billRef, newBill)
-      .then(() => {
-        setIsGenerating(false);
-        setDraftItems([]); setClientName(""); setAddress("");
-        setSelectedBill(newBill);
-        toast({ title: "E-Bill Issued", description: `Ref: ${billId} | Synced in Cloud NRS.` });
-      })
       .catch(async (err) => {
-        setIsGenerating(false);
         errorEmitter.emit('permission-error', new FirestorePermissionError({
           path: billRef.path,
           operation: 'create',
           requestResourceData: newBill
         }));
       });
+
+    // Reset UI instantly
+    setDraftItems([]); setClientName(""); setAddress("");
+    setSelectedBill(newBill);
+    toast({ title: "E-Bill Issued", description: `Ref: ${billId} | Synchronized in Cloud NRS.` });
   }
 
   const voidBill = (id: string) => {
     if (!db) return;
     const billRef = doc(db, 'bills', id);
     setDoc(billRef, { status: 'Void' }, { merge: true })
-      .then(() => toast({ title: "Bill Voided", description: "Document marked as void in Cloud NRS." }))
       .catch(async (err) => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({
           path: billRef.path,
@@ -112,19 +109,20 @@ export default function BillingPage() {
           requestResourceData: { status: 'Void' }
         }));
       });
+    toast({ title: "Bill Voided", description: "Document marked as void in Cloud NRS." });
   }
 
   const deleteBill = (id: string) => {
     if (!db) return;
     const billRef = doc(db, 'bills', id);
     deleteDoc(billRef)
-      .then(() => toast({ title: "Bill Deleted", description: "Document removed from cloud terminal.", variant: "destructive" }))
       .catch(async (err) => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({
           path: billRef.path,
           operation: 'delete'
         }));
       });
+    toast({ title: "Bill Deleted", description: "Document removed from cloud terminal.", variant: "destructive" });
   }
 
   return (
@@ -170,9 +168,9 @@ export default function BillingPage() {
               <Button 
                 className="w-full h-14 bg-primary font-black shadow-xl uppercase tracking-widest" 
                 onClick={generateBill}
-                disabled={isGenerating || draftItems.length === 0}
+                disabled={draftItems.length === 0}
               >
-                {isGenerating ? "Encrypting..." : `Finalize ${billType}`}
+                Finalize {billType}
               </Button>
             </CardFooter>
           </Card>
@@ -263,7 +261,7 @@ export default function BillingPage() {
                </div>
              ) : (
                <div className="flex-1 flex flex-col items-center justify-center space-y-4 text-center">
-                 <Receipt className="h-12 w-12 text-slate-200" />
+                 <Zap className="h-12 w-12 text-primary opacity-10" />
                  <p className="text-[10px] font-black uppercase text-slate-400">Construct E-Bill to preview cloud document.</p>
                </div>
              )}
