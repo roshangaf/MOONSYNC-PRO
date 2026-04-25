@@ -11,15 +11,21 @@ import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbP
 import { useFirestore, useMemoFirebase, useCollection } from "@/firebase"
 import { collection, query, orderBy } from "firebase/firestore"
 
+/**
+ * Primary Synchronization Layout.
+ * Warms up the Firestore cache for all core organizational data to ensure instant cross-device navigation.
+ */
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
   const db = useFirestore();
 
+  // Cross-device synchronization nodes
   const tasksQuery = useMemoFirebase(() => db ? query(collection(db, 'tasks'), orderBy('createdAt', 'desc')) : null, [db]);
   const usersQuery = useMemoFirebase(() => db ? collection(db, 'users') : null, [db]);
   const attendanceQuery = useMemoFirebase(() => db ? query(collection(db, 'attendance'), orderBy('date', 'desc')) : null, [db]);
   const billsQuery = useMemoFirebase(() => db ? query(collection(db, 'bills'), orderBy('createdAt', 'desc')) : null, [db]);
   
+  // Background cache-warming for sub-second page switches
   useCollection(tasksQuery);
   useCollection(usersQuery);
   useCollection(attendanceQuery);

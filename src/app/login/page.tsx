@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Building2, ShieldCheck, Lock, ArrowRight, Loader2, User as UserIcon, Fingerprint, ShieldAlert } from "lucide-react"
+import { Building2, ShieldCheck, Lock, ArrowRight, Loader2, User as UserIcon, Fingerprint, ShieldAlert, Wifi } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/components/auth-context"
 import { Role, User } from "@/lib/types"
@@ -21,6 +21,10 @@ const DEFAULT_DEPT_KEYS: Record<Role, string> = {
   'Finance': 'AUDIT-PRO-11',
 };
 
+/**
+ * Multi-Device Login Terminal.
+ * Synchronizes with the cloud organizational directory to allow seamless access from any phone or computer.
+ */
 export default function CompanyLoginPage() {
   const [domain, setDomain] = useState("")
   const [token, setToken] = useState("")
@@ -36,11 +40,13 @@ export default function CompanyLoginPage() {
   const { login } = useAuth()
   const db = useFirestore()
 
+  // Cloud infrastructure settings
   const companyRef = useMemoFirebase(() => db ? doc(db, 'settings', 'company') : null, [db]);
   const { data: companySettings } = useDoc<any>(companyRef);
 
+  // Global personnel directory
   const allUsersQuery = useMemoFirebase(() => db ? collection(db, 'users') : null, [db]);
-  const { data: allUsers = [] } = useCollection<User>(allUsersQuery);
+  const { data: allUsers = [], loading: loadingUsers } = useCollection<User>(allUsersQuery);
 
   const usersQuery = useMemoFirebase(() => {
     if (!db || !selectedRole) return null;
@@ -60,6 +66,7 @@ export default function CompanyLoginPage() {
     e.preventDefault()
     const currentDomain = domain.trim().toLowerCase();
 
+    // Universal organization handshake
     const isValidMoonSync = currentDomain.includes("moonsync") && token === "0621";
     const isValidMansa = currentDomain.includes("mansa") && token === "6767";
 
@@ -228,31 +235,40 @@ export default function CompanyLoginPage() {
 
             {step === 2 && (
               <div className="grid gap-3">
-                {(['Admin', 'Marketing', 'Technician', 'Finance'] as Role[]).map((role) => (
-                  <Button 
-                    key={role}
-                    variant="outline" 
-                    className="h-20 justify-between px-6 hover:bg-primary hover:text-white hover:border-primary transition-all duration-300 border-slate-200 bg-white/50 group rounded-xl"
-                    onClick={() => handleRoleSelect(role)}
-                  >
-                    <div className="flex flex-col items-start text-left">
-                        <span className="font-black text-sm uppercase tracking-tighter">{role}</span>
-                        <span className="text-[9px] opacity-70 font-bold uppercase tracking-[0.2em]">Node Terminal</span>
-                    </div>
-                    <ArrowRight className="w-5 h-5 opacity-30 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
-                  </Button>
-                ))}
-                
-                {allUsers.length === 0 && (
-                  <Button 
-                    variant="outline" 
-                    className="mt-6 border-dashed border-accent text-accent hover:bg-accent hover:text-white font-black uppercase text-[10px] tracking-widest h-14 rounded-xl"
-                    onClick={handleSeedAdmin}
-                    disabled={isVerifying}
-                  >
-                    <ShieldAlert className="mr-2 h-4 w-4" />
-                    Deploy Initial Admin
-                  </Button>
+                {loadingUsers ? (
+                  <div className="py-10 text-center flex flex-col items-center gap-4">
+                    <Wifi className="h-8 w-8 text-primary animate-pulse" />
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Syncing directory...</p>
+                  </div>
+                ) : (
+                  <>
+                    {(['Admin', 'Marketing', 'Technician', 'Finance'] as Role[]).map((role) => (
+                      <Button 
+                        key={role}
+                        variant="outline" 
+                        className="h-20 justify-between px-6 hover:bg-primary hover:text-white hover:border-primary transition-all duration-300 border-slate-200 bg-white/50 group rounded-xl"
+                        onClick={() => handleRoleSelect(role)}
+                      >
+                        <div className="flex flex-col items-start text-left">
+                            <span className="font-black text-sm uppercase tracking-tighter">{role}</span>
+                            <span className="text-[9px] opacity-70 font-bold uppercase tracking-[0.2em]">Node Terminal</span>
+                        </div>
+                        <ArrowRight className="w-5 h-5 opacity-30 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+                      </Button>
+                    ))}
+                    
+                    {allUsers.length === 0 && !loadingUsers && (
+                      <Button 
+                        variant="outline" 
+                        className="mt-6 border-dashed border-accent text-accent hover:bg-accent hover:text-white font-black uppercase text-[10px] tracking-widest h-14 rounded-xl"
+                        onClick={handleSeedAdmin}
+                        disabled={isVerifying}
+                      >
+                        <ShieldAlert className="mr-2 h-4 w-4" />
+                        Deploy Initial Admin
+                      </Button>
+                    )}
+                  </>
                 )}
 
                 <Button 

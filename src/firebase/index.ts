@@ -14,12 +14,16 @@ import { firebaseConfig } from './config';
 
 let dbInstance: Firestore | null = null;
 
+/**
+ * Initializes the Firebase application and its core services.
+ * Specifically configured for high-performance IT terminal synchronization.
+ */
 export function initializeFirebase() {
   const app: FirebaseApp = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
   
   if (!dbInstance) {
     try {
-      // Enable high-speed persistent local cache for instant data availability
+      // Enable high-speed persistent local cache for instant data availability across devices and tabs
       dbInstance = initializeFirestore(app, {
         localCache: persistentLocalCache({
           tabManager: persistentMultipleTabManager()
